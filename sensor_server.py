@@ -2,10 +2,9 @@ from fastapi import FastAPI, HTTPException, Request
 import os
 import json
 
-
 app = FastAPI()
 
-# Directory to store incoming data
+# Base directory to store incoming data
 DATA_DIR = "sensor_data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
@@ -18,8 +17,15 @@ async def upload_sensor_data(request: Request):
         if not sensor_data:
             raise HTTPException(status_code=400, detail="No JSON data received")
 
-        # Save data to a file (customize as needed)
-        filename = os.path.join(DATA_DIR, f"sensor_{sensor_data.get('device_id', 'unknown')}.json")
+        # Extract the client's IP address
+        client_ip = request.client.host
+
+        # Create a directory for the client IP
+        client_dir = os.path.join(DATA_DIR, client_ip)
+        os.makedirs(client_dir, exist_ok=True)
+
+        # Save data to a file in the client's directory
+        filename = os.path.join(client_dir, f"sensor_{sensor_data.get('device_id', 'unknown')}.json")
         with open(filename, 'a') as file:
             file.write(json.dumps(sensor_data) + '\n')
 
