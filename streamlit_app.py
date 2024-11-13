@@ -2,7 +2,6 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from collections import deque
 from datetime import datetime
-import asyncio
 import threading
 import streamlit as st
 import pandas as pd
@@ -15,7 +14,7 @@ accel_y_queue = deque(maxlen=1000)
 accel_z_queue = deque(maxlen=1000)
 
 # Lock for thread-safe operations
-data_lock = asyncio.Lock()
+data_lock = threading.Lock()
 
 # FastAPI app for data collection
 app = FastAPI()
@@ -35,7 +34,7 @@ async def upload_sensor_data(request: Request):
     data = await request.json()
 
     # Process each JSON object in the data
-    async with data_lock:
+    with data_lock:  # Use threading.Lock for synchronous access
         for d in data:
             if d.get("name") in ["accelerometer", "accelerometeruncalibrated"]:
                 ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)

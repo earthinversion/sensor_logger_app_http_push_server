@@ -10,6 +10,7 @@ pip install fastapi uvicorn
 pip install Flask Flask-SocketIO eventlet
 pip install dash
 pip install plotly
+pip install streamlit
 git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
 
 # ## install redis from source
