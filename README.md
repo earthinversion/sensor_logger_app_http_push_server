@@ -7,7 +7,7 @@ sudo yum install -y tmux
 python3 -m venv venv
 source venv/bin/activate
 pip install fastapi uvicorn
-
+git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
 
 # ## install redis from source
 # sudo yum install -y gcc jemalloc-devel
@@ -56,7 +56,8 @@ cd smartphone_sensor_data_acquisition
 
 
 ## Access the app
-- http://54.245.66.246:5000/
+<!-- - http://54.245.66.246:5000/ -->
+- http://35.89.184.162:5000/
 
 ## Starting and stopping the service
 ```bash

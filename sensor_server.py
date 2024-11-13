@@ -9,7 +9,7 @@ app = FastAPI()
 DATA_DIR = "sensor_data"
 os.makedirs(DATA_DIR, exist_ok=True)
 
-@app.post("/upload")
+@app.post("/data")
 async def upload_sensor_data(request: Request):
     try:
         # Get JSON data from the POST request
