@@ -36,7 +36,7 @@ async def upload_sensor_data(request: Request):
     # Process each JSON object in the data
     with data_lock:  # Use threading.Lock for synchronous access
         for d in data:
-            if d.get("name") in ["accelerometer", "accelerometeruncalibrated"]:
+            if d.get("name") in ["accelerometer"]:
                 ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
                 if len(time_queue) == 0 or ts > time_queue[-1]:
                     time_queue.append(ts)

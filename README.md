@@ -13,6 +13,8 @@ pip install plotly
 pip install streamlit
 git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
 
+streamlit run streamlit_app.py --server.port 5000
+
 # ## install redis from source
 # sudo yum install -y gcc jemalloc-devel
 # curl -O http://download.redis.io/redis-stable.tar.gz
