@@ -66,9 +66,7 @@ def data():  # listens to the data streamed from the sensor logger
 		print(f'received data: {request.data}')
 		data = json.loads(request.data)
 		for d in data['payload']:
-			if (
-				d.get("name", None) == "accelerometer"
-			):  #  modify to access different sensors
+			if (d.get("name", None) == "accelerometer") or (d.get("name", None) == "accelerometeruncalibrated"):  
 				ts = datetime.fromtimestamp(d["time"] / 1000000000)
 				if len(time) == 0 or ts > time[-1]:
 					time.append(ts)
