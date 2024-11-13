@@ -63,7 +63,7 @@ def update_graph(_counter):
 @server.route("/data", methods=["POST"])
 def data():  # listens to the data streamed from the sensor logger
 	if str(request.method) == "POST":
-		print(f'received data: {request.data}')
+		# print(f'received data: {request.data}')
 		data = json.loads(request.data)
 		for d in data['payload']:
 			if (
