@@ -7,6 +7,9 @@ sudo yum install -y tmux
 python3 -m venv venv
 source venv/bin/activate
 pip install fastapi uvicorn
+pip install Flask Flask-SocketIO eventlet
+pip install dash
+pip install plotly
 git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
 
 # ## install redis from source
