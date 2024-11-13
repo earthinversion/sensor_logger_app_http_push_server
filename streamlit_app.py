@@ -6,6 +6,7 @@ import threading
 import streamlit as st
 import pandas as pd
 import time as time_lib
+import matplotlib.pyplot as plt
 
 # Shared data storage (deque with max length)
 time_queue = deque(maxlen=1000)
@@ -85,9 +86,38 @@ def run_streamlit():
                 "Z": list(accel_z_queue),
             })
 
-        # Update the visualization
+        # If no data, skip plotting
+        if data.empty:
+            time_lib.sleep(1)
+            continue
+
+        # Create a Matplotlib figure
+        fig, ax = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
+
+        # Plot X component
+        ax[0].plot(data["Time"], data["X"], label="X Component", color="red")
+        ax[0].set_ylabel("Acceleration (X)")
+        ax[0].legend(loc="upper right")
+
+        # Plot Y component
+        ax[1].plot(data["Time"], data["Y"], label="Y Component", color="green")
+        ax[1].set_ylabel("Acceleration (Y)")
+        ax[1].legend(loc="upper right")
+
+        # Plot Z component
+        ax[2].plot(data["Time"], data["Z"], label="Z Component", color="blue")
+        ax[2].set_ylabel("Acceleration (Z)")
+        ax[2].legend(loc="upper right")
+
+        # Common time axis
+        ax[2].set_xlabel("Time")
+
+        # Rotate time labels for better visibility
+        plt.setp(ax[2].xaxis.get_majorticklabels(), rotation=45)
+
+        # Update the Streamlit placeholder with the Matplotlib figure
         with placeholder.container():
-            st.line_chart(data.set_index("Time"))
+            st.pyplot(fig)
 
         time_lib.sleep(1)  # Adjust refresh rate
 
