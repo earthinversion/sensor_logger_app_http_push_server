@@ -25,6 +25,7 @@ async def upload_sensor_data(request: Request):
 
         return {"message": "Data received successfully"}
     except Exception as e:
+        print(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/")
