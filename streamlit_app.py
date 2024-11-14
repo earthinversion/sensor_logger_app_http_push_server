@@ -21,7 +21,7 @@ sensor_data_to_store = 'gravity' #'accelerometer'
 
 # Function to fetch the last 60*50 samples from the database
 def get_last_samples():
-    conn = sqlite3.connect("sensor_data.db")
+    conn = sqlite3.connect(f"sensor_data_{sensor_data_to_store}.db")
     try:
         query = f"""
             SELECT timestamp, x, y, z 

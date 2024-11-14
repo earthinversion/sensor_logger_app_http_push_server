@@ -31,7 +31,7 @@ app.add_middleware(
 
 def init_database(sensor_data_to_store='gravity'):
     """Initialize SQLite database with required table"""
-    conn = sqlite3.connect("sensor_data.db")
+    conn = sqlite3.connect(f"sensor_data_{sensor_data_to_store}.db")
     cursor = conn.cursor()
     cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS {sensor_data_to_store} (
