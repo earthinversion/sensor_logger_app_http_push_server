@@ -7,6 +7,7 @@ import streamlit as st
 import pandas as pd
 import time as time_lib
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 # Shared data storage (deque with max length)
 time_queue = deque(maxlen=1000)
@@ -96,27 +97,36 @@ def run_streamlit():
             # Ensure Time is in datetime format for Plotly
             data["Time"] = pd.to_datetime(data["Time"])
 
-            # Create a Plotly figure
-            fig = go.Figure()
+            # Create a Plotly figure with subplots
+            fig = make_subplots(
+                rows=3, cols=1, shared_xaxes=True,
+                vertical_spacing=0.02,
+                subplot_titles=("X Component", "Y Component", "Z Component")
+            )
 
             # Add X component
-            fig.add_trace(go.Scatter(x=data["Time"], y=data["X"], mode="lines", name="X Component", line=dict(color="red")))
+            fig.add_trace(
+                go.Scatter(x=data["Time"], y=data["X"], mode="lines", name="X Component", line=dict(color="red")),
+                row=1, col=1
+            )
 
             # Add Y component
-            fig.add_trace(go.Scatter(x=data["Time"], y=data["Y"], mode="lines", name="Y Component", line=dict(color="green")))
+            fig.add_trace(
+                go.Scatter(x=data["Time"], y=data["Y"], mode="lines", name="Y Component", line=dict(color="green")),
+                row=2, col=1
+            )
 
             # Add Z component
-            fig.add_trace(go.Scatter(x=data["Time"], y=data["Z"], mode="lines", name="Z Component", line=dict(color="blue")))
+            fig.add_trace(
+                go.Scatter(x=data["Time"], y=data["Z"], mode="lines", name="Z Component", line=dict(color="blue")),
+                row=3, col=1
+            )
 
             # Update layout
             fig.update_layout(
                 title="Real-Time Accelerometer Data",
                 xaxis_title="Time",
-                yaxis_title="Acceleration",
-                xaxis=dict(showline=True, showgrid=True),
-                yaxis=dict(showline=True, showgrid=True),
-                legend=dict(x=0, y=1, traceorder="normal"),
-                height=600,
+                height=800,
                 margin=dict(l=40, r=40, t=40, b=40),
             )
 
