@@ -25,7 +25,7 @@ def get_last_samples():
     try:
         query = f"""
             SELECT timestamp, x, y, z 
-            FROM {sensor_data_to_store} 
+            FROM {sensor_data_to_store}_data 
             ORDER BY timestamp DESC
             LIMIT ?
         """
