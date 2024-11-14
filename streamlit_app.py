@@ -47,6 +47,7 @@ def get_data_from_db(time_range_minutes):
     """Fetch data from SQLite database for the specified time range"""
     # Calculate start_time in UTC
     start_time = datetime.utcnow() - timedelta(minutes=time_range_minutes)
+    print(f"Looking for data after {start_time}")
     conn = sqlite3.connect("sensor_data.db")
     try:
         query = """
