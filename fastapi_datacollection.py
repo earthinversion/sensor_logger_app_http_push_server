@@ -36,6 +36,7 @@ def init_database(sensor_data_to_store='gravity'):
     cursor.execute(f'''
         CREATE TABLE IF NOT EXISTS {sensor_data_to_store}_data (
             timestamp DATETIME PRIMARY KEY,
+            client_ip TEXT,
             x REAL,
             y REAL,
             z REAL
@@ -50,14 +51,14 @@ def init_database(sensor_data_to_store='gravity'):
     conn.close()
     logger.info("Database initialized successfully")
 
-def store_data_in_db(timestamp, x, y, z):
+def store_data_in_db(timestamp, client_ip, x, y, z):
     """Store sensor data in SQLite database"""
     conn = sqlite3.connect("sensor_data_accelerometer.db")
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO accelerometer_data (timestamp, x, y, z) VALUES (?, ?, ?, ?)",
-            (timestamp, x, y, z)
+            "INSERT INTO accelerometer_data (timestamp, client_ip, x, y, z) VALUES (?, ?, ?, ?, ?)",
+            (timestamp, client_ip, x, y, z)
         )
         conn.commit()
         # print(f"Stored data at {timestamp}")
@@ -69,14 +70,14 @@ def store_data_in_db(timestamp, x, y, z):
     finally:
         conn.close()
 
-def store_gravity_data_in_db(timestamp, x, y, z):
+def store_gravity_data_in_db(timestamp, client_ip, x, y, z):
     """Store sensor data in SQLite database"""
     conn = sqlite3.connect("sensor_data_gravity.db")
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "INSERT INTO gravity_data (timestamp, x, y, z) VALUES (?, ?, ?, ?)",
-            (timestamp, x, y, z)
+            "INSERT INTO gravity_data (timestamp, client_ip, x, y, z) VALUES (?, ?, ?, ?, ?)",
+            (timestamp, client_ip, x, y, z)
         )
         conn.commit()
         # print(f"Stored data at {timestamp}")
@@ -102,15 +103,16 @@ async def upload_sensor_data(request: Request):
         # print("-----------------")
         # print(payload)
         # print("-----------------")
+        client_ip = request.client.host
         processed_count = 0
         for d in payload:
             if d.get("name") in sensor_data_list_to_store:
                 ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
                 x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
                 if d.get("name") == 'gravity':
-                    store_gravity_data_in_db(ts, x, y, z)
+                    store_gravity_data_in_db(ts, client_ip, x, y, z)
                 elif d.get("name") == 'accelerometer':
-                    store_data_in_db(ts, x, y, z)
+                    store_data_in_db(ts, client_ip, x, y, z)
                 processed_count += 1
 
             

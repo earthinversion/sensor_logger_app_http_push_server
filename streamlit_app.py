@@ -20,16 +20,20 @@ logger = logging.getLogger(__name__)
 sensor_data_to_store = 'accelerometer' #'accelerometer'
 
 # Function to fetch the last 60*50 samples from the database
-def get_last_samples():
+def get_last_samples(client_ip=None):
+    if client_ip is None:
+        return pd.DataFrame()
+    
     conn = sqlite3.connect(f"sensor_data_{sensor_data_to_store}.db")
     try:
         query = f"""
             SELECT timestamp, x, y, z 
             FROM {sensor_data_to_store}_data 
+            WHERE client_ip = ?
             ORDER BY timestamp DESC
             LIMIT ?
         """
-        df = pd.read_sql_query(query, conn, params=(60 * 50,))
+        df = pd.read_sql_query(query, conn, params=(client_ip, 60 * 50,))
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df.sort_values(by="timestamp")  # Ensure data is sorted in ascending order
     except Exception as e:
@@ -39,8 +43,8 @@ def get_last_samples():
         conn.close()
 
 # Function to visualize the data
-def update_visualization(placeholder, plot_key):
-    df = get_last_samples()
+def update_visualization(client_ip, placeholder, plot_key):
+    df = get_last_samples(client_ip)
     
     if df.empty:
         placeholder.warning("No data available.")
@@ -79,12 +83,34 @@ def update_visualization(placeholder, plot_key):
     with placeholder.container():
         st.plotly_chart(fig, use_container_width=True, key=plot_key)
 
+## Get all client_ip in the database
+def get_all_client_ip():
+    conn = sqlite3.connect(f"sensor_data_{sensor_data_to_store}.db")
+    try:
+        query = f"""
+            SELECT DISTINCT client_ip
+            FROM {sensor_data_to_store}_data
+        """
+        df = pd.read_sql_query(query, conn)
+        return df['client_ip'].tolist()
+    except Exception as e:
+        logger.error(f"Error fetching data: {e}")
+        return []
+    finally:
+        conn.close()
+
 # Main function
 def main():
     st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
     
     # Create a placeholder for the plot
     placeholder = st.empty()
+
+    # Add a dropdown for selecting client_ip
+    client_ip = st.sidebar.selectbox(
+        "Select Client IP",
+        options=get_all_client_ip()
+    )
 
     # Add auto-refresh option
     auto_refresh = st.sidebar.checkbox("Auto-refresh", value=True)
@@ -100,7 +126,7 @@ def main():
         iteration = 0  # To generate unique keys for each plot
         while auto_refresh:
             plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
-            update_visualization(placeholder, plot_key)
+            update_visualization(client_ip, placeholder, plot_key)
             # st.sidebar.info(f"Refreshing every {refresh_rate} seconds")
             time.sleep(refresh_rate)
             iteration += 1
@@ -110,7 +136,7 @@ def main():
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(placeholder, "manual_plot")
+            update_visualization(client_ip, placeholder, "manual_plot")
 
 if __name__ == "__main__":
     main()
