@@ -122,7 +122,7 @@ def run_streamlit():
 
             # Update the plot in the placeholder
             with placeholder.container():
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"plot-{time_lib.time()}")
 
         # Sleep for the refresh rate
         time_lib.sleep(refresh_rate)
@@ -134,5 +134,5 @@ if __name__ == "__main__":
     fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
     fastapi_thread.start()
 
-    # Run Streamlit visualization on port 5000
+    # Run Streamlit visualization
     run_streamlit()
