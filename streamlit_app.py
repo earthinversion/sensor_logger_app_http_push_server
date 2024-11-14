@@ -81,7 +81,7 @@ def update_visualization(placeholder, plot_key):
 
 # Main function
 def main():
-    st.title("Accelerometer Data Visualization")
+    st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
     
     # Create a placeholder for the plot
     placeholder = st.empty()

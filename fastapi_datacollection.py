@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-sensor_data_to_store = 'gravity' #'accelerometer'
+sensor_data_list_to_store = ['gravity', 'accelerometer']
 
 app = FastAPI()
 
@@ -104,7 +104,7 @@ async def upload_sensor_data(request: Request):
         # print("-----------------")
         processed_count = 0
         for d in payload:
-            if d.get("name") in [sensor_data_to_store]:
+            if d.get("name") in sensor_data_list_to_store:
                 ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
                 x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
                 if sensor_data_to_store == 'gravity':
@@ -129,29 +129,10 @@ def health_check():
         "timestamp": datetime.now().isoformat()
     }
 
-@app.get("/stats")
-async def get_stats():
-    """Get basic statistics about the stored data"""
-    conn = sqlite3.connect("sensor_data.db")
-    try:
-        cursor = conn.cursor()
-        cursor.execute(f"""
-            SELECT 
-                COUNT(*) as total_records,
-                MIN(timestamp) as oldest_record,
-                MAX(timestamp) as newest_record
-            FROM {sensor_data_to_store}
-        """)
-        total, oldest, newest = cursor.fetchone()
-        return {
-            "total_records": total,
-            "oldest_record": oldest,
-            "newest_record": newest
-        }
-    finally:
-        conn.close()
 
 if __name__ == "__main__":
-    init_database(sensor_data_to_store)
+    for sensor_data_to_store in sensor_data_list_to_store:
+        init_database(sensor_data_to_store)
+
     logger.info("Starting sensor data server...")
     uvicorn.run(app, host="0.0.0.0", port=56204)
