@@ -1,223 +1,125 @@
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from collections import deque
-from datetime import datetime, timedelta
-import threading
+# streamlit_app.py
 import streamlit as st
 import pandas as pd
-import time as time_lib
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import time
 import sqlite3
-import json
+from datetime import datetime, timedelta
+import requests
+import logging
 
-# Database configuration
-DB_NAME = "sensor_data.db"
-
-def init_database():
-    """Initialize SQLite database with required table"""
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS accelerometer_data (
-            timestamp DATETIME PRIMARY KEY,
-            x REAL,
-            y REAL,
-            z REAL
-        )
-    ''')
-    conn.commit()
-    conn.close()
-
-# Shared data storage (deque with max length)
-data_length_to_display = 60  # seconds
-sampling_rate = 50  # Hz
-total_data_points = data_length_to_display * sampling_rate
-
-# Global variables for data storage
-class DataStore:
-    def __init__(self):
-        self.time_queue = deque(maxlen=total_data_points)
-        self.accel_x_queue = deque(maxlen=total_data_points)
-        self.accel_y_queue = deque(maxlen=total_data_points)
-        self.accel_z_queue = deque(maxlen=total_data_points)
-        self.data_lock = threading.Lock()
-        self.last_fetch_time = None
-        self.selected_time_range = 1  # Default 1 minute
-
-data_store = DataStore()
-
-# FastAPI app
-app = FastAPI()
-
-# Enable CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('streamlit_app.log'),
+        logging.StreamHandler()
+    ]
 )
+logger = logging.getLogger(__name__)
 
-def store_data_in_db(timestamp, x, y, z):
-    """Store sensor data in SQLite database"""
-    conn = sqlite3.connect(DB_NAME)
-    cursor = conn.cursor()
-    try:
-        cursor.execute(
-            "INSERT INTO accelerometer_data (timestamp, x, y, z) VALUES (?, ?, ?, ?)",
-            (timestamp, x, y, z)
-        )
-        conn.commit()
-    except sqlite3.IntegrityError:
-        pass  # Ignore duplicate timestamps
-    finally:
-        conn.close()
+# Configuration
+FASTAPI_URL = "http://localhost:56204"  # Update this if your server is on a different host
 
-def get_historical_data(start_time):
-    """Fetch historical data from SQLite database"""
-    conn = sqlite3.connect(DB_NAME)
+def check_server_health():
+    """Check if the FastAPI server is running"""
     try:
-        df = pd.read_sql_query("""
+        response = requests.get(f"{FASTAPI_URL}/")
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+def get_server_stats():
+    """Get statistics from the server"""
+    try:
+        response = requests.get(f"{FASTAPI_URL}/stats")
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except requests.RequestException:
+        return None
+
+def get_data_from_db(time_range_minutes):
+    """Fetch data from SQLite database for the specified time range"""
+    start_time = datetime.now() - timedelta(minutes=time_range_minutes)
+    
+    conn = sqlite3.connect("sensor_data.db")
+    try:
+        query = """
             SELECT timestamp, x, y, z 
             FROM accelerometer_data 
             WHERE timestamp > ? 
             ORDER BY timestamp ASC
-        """, conn, params=(start_time.isoformat(),))
+        """
+        df = pd.read_sql_query(query, conn, params=(start_time.isoformat(),))
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df
+    except Exception as e:
+        logger.error(f"Error fetching data: {e}")
+        return pd.DataFrame()
     finally:
         conn.close()
 
-@app.post("/data")
-async def upload_sensor_data(request: Request):
-    try:
-        data = await request.json()
-        payload = data.get("payload", [])
-        
-        if not isinstance(payload, list):
-            return {"status": "error", "message": "Invalid payload format"}
-
-        with data_store.data_lock:
-            for d in payload:
-                if d.get("name") in ["accelerometer"]:
-                    ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
-                    x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
-                    
-                    # Store in database
-                    store_data_in_db(ts, x, y, z)
-                    
-                    # Update deque if it's recent data
-                    if len(data_store.time_queue) == 0 or ts > data_store.time_queue[-1]:
-                        data_store.time_queue.append(ts)
-                        data_store.accel_x_queue.append(x)
-                        data_store.accel_y_queue.append(y)
-                        data_store.accel_z_queue.append(z)
-
-        return {"status": "success"}
-
-    except Exception as e:
-        return {"status": "error", "message": str(e)}
-
-@app.get("/")
-def health_check():
-    return {"message": "Data collection server is running!"}
-
-def run_fastapi():
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=56204)
-
 def update_visualization(placeholder, time_range):
-    """Update the visualization with current data and historical data if needed"""
-    current_time = datetime.now()
+    """Update the visualization with current data"""
+    df = get_data_from_db(time_range)
     
-    # Get current data from deque
-    with data_store.data_lock:
-        current_data = pd.DataFrame({
-            "Time": list(data_store.time_queue),
-            "X": list(data_store.accel_x_queue),
-            "Y": list(data_store.accel_y_queue),
-            "Z": list(data_store.accel_z_queue),
-        })
+    if df.empty:
+        placeholder.error("No data available for the selected time range")
+        return
 
-    # If historical data is requested, fetch from database
-    if time_range * 60 > data_length_to_display:
-        start_time = current_time - timedelta(minutes=time_range)
+    fig = make_subplots(
+        rows=3, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.02,
+        subplot_titles=("X Component", "Y Component", "Z Component")
+    )
+
+    fig.add_trace(
+        go.Scatter(x=df["timestamp"], y=df["x"], mode="lines", line=dict(color="red")),
+        row=1, col=1
+    )
+    fig.add_trace(
+        go.Scatter(x=df["timestamp"], y=df["y"], mode="lines", line=dict(color="green")),
+        row=2, col=1
+    )
+    fig.add_trace(
+        go.Scatter(x=df["timestamp"], y=df["z"], mode="lines", line=dict(color="blue")),
+        row=3, col=1
+    )
+
+    fig.update_layout(
+        xaxis_title="Time",
+        height=600,
+        margin=dict(l=40, r=40, t=40, b=40),
+        showlegend=False
+    )
+    fig.update_yaxes(title_text="X", row=1, col=1)
+    fig.update_yaxes(title_text="Y", row=2, col=1)
+    fig.update_yaxes(title_text="Z", row=3, col=1)
+
+    with placeholder.container():
+        st.plotly_chart(fig, use_container_width=True)
         
-        # Only fetch new historical data if needed
-        if (data_store.last_fetch_time is None or 
-            data_store.last_fetch_time < start_time or 
-            data_store.selected_time_range != time_range):
-            
-            historical_data = get_historical_data(start_time)
-            data_store.last_fetch_time = current_time
-            data_store.selected_time_range = time_range
-            
-            # Combine historical data with current data
-            if not current_data.empty:
-                # Remove overlapping data points
-                historical_data = historical_data[
-                    historical_data['timestamp'] < current_data['Time'].iloc[0]
-                ]
-                data = pd.concat([
-                    historical_data.rename(columns={
-                        'timestamp': 'Time',
-                        'x': 'X',
-                        'y': 'Y',
-                        'z': 'Z'
-                    }),
-                    current_data
-                ])
-            else:
-                data = historical_data.rename(columns={
-                    'timestamp': 'Time',
-                    'x': 'X',
-                    'y': 'Y',
-                    'z': 'Z'
-                })
-        else:
-            data = current_data
-    else:
-        data = current_data
+        # Display data statistics
+        stats = get_server_stats()
+        if stats:
+            st.sidebar.markdown("### Data Statistics")
+            st.sidebar.write(f"Total Records: {stats['total_records']}")
+            st.sidebar.write(f"Oldest Record: {stats['oldest_record']}")
+            st.sidebar.write(f"Newest Record: {stats['newest_record']}")
 
-    if not data.empty:
-        fig = make_subplots(
-            rows=3, cols=1,
-            shared_xaxes=True,
-            vertical_spacing=0.02,
-            subplot_titles=("X Component", "Y Component", "Z Component")
-        )
-
-        fig.add_trace(
-            go.Scatter(x=data["Time"], y=data["X"], mode="lines", line=dict(color="red")),
-            row=1, col=1
-        )
-        fig.add_trace(
-            go.Scatter(x=data["Time"], y=data["Y"], mode="lines", line=dict(color="green")),
-            row=2, col=1
-        )
-        fig.add_trace(
-            go.Scatter(x=data["Time"], y=data["Z"], mode="lines", line=dict(color="blue")),
-            row=3, col=1
-        )
-
-        fig.update_layout(
-            xaxis_title="Time",
-            height=600,
-            margin=dict(l=40, r=40, t=40, b=40),
-            showlegend=False
-        )
-        fig.update_yaxes(title_text="X", row=1, col=1)
-        fig.update_yaxes(title_text="Y", row=2, col=1)
-        fig.update_yaxes(title_text="Z", row=3, col=1)
-
-        with placeholder.container():
-            st.plotly_chart(fig, use_container_width=True, key=f"plot-{time_lib.time()}")
-
-def run_streamlit():
+def main():
     st.title("Real-Time Accelerometer Visualization")
     
-    # Create a placeholder for the plot
-    placeholder = st.empty()
+    # Check server status
+    if not check_server_health():
+        st.error("⚠️ Cannot connect to the sensor data server. Please ensure it's running.")
+        st.stop()
+    else:
+        st.sidebar.success("✅ Connected to sensor data server")
     
     # Add time range selector in sidebar
     time_range = st.sidebar.slider(
@@ -228,19 +130,37 @@ def run_streamlit():
         key="time_range"
     )
     
-    refresh_rate = 0.5  # Refresh rate in seconds
+    # Create a placeholder for the plot
+    placeholder = st.empty()
+    
+    # Add visualization controls
+    with st.sidebar:
+        st.markdown("### Visualization Controls")
+        auto_refresh = st.checkbox("Auto-refresh", value=True)
+        
+        if auto_refresh:
+            refresh_rate = st.slider(
+                "Refresh Rate (seconds)",
+                min_value=0.1,
+                max_value=5.0,
+                value=0.5,
+                step=0.1
+            )
+            st.info(f"Updating every {refresh_rate} seconds")
+        else:
+            refresh_button = st.button("Refresh Now")
+            if refresh_button:
+                update_visualization(placeholder, time_range)
+            st.info("Manual refresh mode")
+            return
 
-    while True:
-        update_visualization(placeholder, time_range)
-        time_lib.sleep(refresh_rate)
+    try:
+        while auto_refresh:
+            update_visualization(placeholder, time_range)
+            time.sleep(refresh_rate)
+    except Exception as e:
+        logger.error(f"Error in visualization loop: {e}")
+        st.error(f"An error occurred: {str(e)}")
 
 if __name__ == "__main__":
-    # Initialize database
-    init_database()
-    
-    # Start FastAPI in a separate thread
-    fastapi_thread = threading.Thread(target=run_fastapi, daemon=True)
-    fastapi_thread.start()
-
-    # Run Streamlit visualization
-    run_streamlit()
+    main()
