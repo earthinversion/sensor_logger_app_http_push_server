@@ -58,6 +58,7 @@ def store_data_in_db(timestamp, x, y, z):
             (timestamp, x, y, z)
         )
         conn.commit()
+        print(f"Stored data at {timestamp}")
     except sqlite3.IntegrityError:
         pass  # Ignore duplicate timestamps
     except Exception as e:
