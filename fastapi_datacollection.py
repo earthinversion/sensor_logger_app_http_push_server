@@ -78,8 +78,7 @@ async def upload_sensor_data(request: Request):
             return {"status": "error", "message": "Invalid payload format"}
         
         ## print all the keys in the payload
-        for i in len(payload):
-            print(payload[i], payload[i].keys())
+        print(payload)
         processed_count = 0
         for d in payload:
             if d.get("name") in ["accelerometer"]:
