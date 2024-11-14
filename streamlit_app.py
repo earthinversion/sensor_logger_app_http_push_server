@@ -6,9 +6,7 @@ import threading
 import streamlit as st
 import pandas as pd
 import time as time_lib
-# import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-
 
 # Shared data storage (deque with max length)
 time_queue = deque(maxlen=1000)
@@ -67,68 +65,21 @@ async def upload_sensor_data(request: Request):
 def health_check():
     return {"message": "Data collection server is running!"}
 
+
 # Run FastAPI in a separate thread
 def run_fastapi():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=56204)
 
+
 # Streamlit visualization
-# def run_streamlit():
-#     st.title("Real-Time Accelerometer Visualization")
-#     placeholder = st.empty()
-
-#     # Real-time plotting loop
-#     while True:
-#         # Convert deque to DataFrame
-#         with data_lock:
-#             data = pd.DataFrame({
-#                 "Time": list(time_queue),
-#                 "X": list(accel_x_queue),
-#                 "Y": list(accel_y_queue),
-#                 "Z": list(accel_z_queue),
-#             })
-
-#         # If no data, skip plotting
-#         if data.empty:
-#             time_lib.sleep(1)
-#             continue
-
-#         # Create a Matplotlib figure
-#         fig, ax = plt.subplots(3, 1, figsize=(10, 8), sharex=True)
-
-#         # Plot X component
-#         ax[0].plot(data["Time"], data["X"], label="X Component", color="red")
-#         ax[0].set_ylabel("Acceleration (X)")
-#         ax[0].legend(loc="upper right")
-
-#         # Plot Y component
-#         ax[1].plot(data["Time"], data["Y"], label="Y Component", color="green")
-#         ax[1].set_ylabel("Acceleration (Y)")
-#         ax[1].legend(loc="upper right")
-
-#         # Plot Z component
-#         ax[2].plot(data["Time"], data["Z"], label="Z Component", color="blue")
-#         ax[2].set_ylabel("Acceleration (Z)")
-#         ax[2].legend(loc="upper right")
-
-#         # # Common time axis
-#         # ax[2].set_xlabel("Time")
-
-#         # Rotate time labels for better visibility
-#         plt.setp(ax[2].xaxis.get_majorticklabels(), rotation=45)
-
-#         # Update the Streamlit placeholder with the Matplotlib figure
-#         with placeholder.container():
-#             st.pyplot(fig)
-
-#         # Close the figure to free up memory
-#         plt.close(fig)
-
-#         time_lib.sleep(0.5)  # Adjust refresh rate
-
 def run_streamlit():
     st.title("Real-Time Accelerometer Visualization")
-    
+    refresh_rate = 0.5  # Refresh rate in seconds
+
+    # Create a placeholder for the plot
+    placeholder = st.empty()
+
     # Real-time plotting loop
     while True:
         # Convert deque to DataFrame
@@ -140,43 +91,41 @@ def run_streamlit():
                 "Z": list(accel_z_queue),
             })
 
-        # If no data, skip plotting
-        if data.empty:
-            time_lib.sleep(1)
-            continue
+        # Render only if there is data
+        if not data.empty:
+            # Ensure Time is in datetime format for Plotly
+            data["Time"] = pd.to_datetime(data["Time"])
 
-        # Ensure Time is in datetime format for Plotly
-        data["Time"] = pd.to_datetime(data["Time"])
+            # Create a Plotly figure
+            fig = go.Figure()
 
-        # Create a Plotly figure
-        fig = go.Figure()
+            # Add X component
+            fig.add_trace(go.Scatter(x=data["Time"], y=data["X"], mode="lines", name="X Component", line=dict(color="red")))
 
-        # Add X component
-        fig.add_trace(go.Scatter(x=data["Time"], y=data["X"], mode="lines", name="X Component", line=dict(color="red")))
-        
-        # Add Y component
-        fig.add_trace(go.Scatter(x=data["Time"], y=data["Y"], mode="lines", name="Y Component", line=dict(color="green")))
-        
-        # Add Z component
-        fig.add_trace(go.Scatter(x=data["Time"], y=data["Z"], mode="lines", name="Z Component", line=dict(color="blue")))
+            # Add Y component
+            fig.add_trace(go.Scatter(x=data["Time"], y=data["Y"], mode="lines", name="Y Component", line=dict(color="green")))
 
-        # Update layout
-        fig.update_layout(
-            title="Real-Time Accelerometer Data",
-            xaxis_title="Time",
-            yaxis_title="Acceleration",
-            xaxis=dict(showline=True, showgrid=True),
-            yaxis=dict(showline=True, showgrid=True),
-            legend=dict(x=0, y=1, traceorder="normal"),
-            height=600,
-            margin=dict(l=40, r=40, t=40, b=40),
-        )
+            # Add Z component
+            fig.add_trace(go.Scatter(x=data["Time"], y=data["Z"], mode="lines", name="Z Component", line=dict(color="blue")))
 
-        # Render the plot
-        st.plotly_chart(fig, use_container_width=True)
+            # Update layout
+            fig.update_layout(
+                title="Real-Time Accelerometer Data",
+                xaxis_title="Time",
+                yaxis_title="Acceleration",
+                xaxis=dict(showline=True, showgrid=True),
+                yaxis=dict(showline=True, showgrid=True),
+                legend=dict(x=0, y=1, traceorder="normal"),
+                height=600,
+                margin=dict(l=40, r=40, t=40, b=40),
+            )
 
-        # Sleep before next update
-        time_lib.sleep(0.5)
+            # Update the plot in the placeholder
+            with placeholder.container():
+                st.plotly_chart(fig, use_container_width=True)
+
+        # Sleep for the refresh rate
+        time_lib.sleep(refresh_rate)
 
 
 # Run both FastAPI and Streamlit
