@@ -118,6 +118,9 @@ def run_streamlit():
         # Update the Streamlit placeholder with the Matplotlib figure
         with placeholder.container():
             st.pyplot(fig)
+            
+        # Close the figure to free up memory
+        plt.close(fig)
 
         time_lib.sleep(0.5)  # Adjust refresh rate
 
