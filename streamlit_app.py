@@ -9,17 +9,15 @@ import time as time_lib
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Define the total number of data points for visualization
+# Shared data storage (deque with max length)
 data_length_to_display = 60  # seconds
 sampling_rate = 50  # Hz
 total_data_points = data_length_to_display * sampling_rate
 
-# Initialize Streamlit state to persist data across script executions
-if "time_queue" not in st.session_state:
-    st.session_state.time_queue = deque(maxlen=total_data_points)
-    st.session_state.accel_x_queue = deque(maxlen=total_data_points)
-    st.session_state.accel_y_queue = deque(maxlen=total_data_points)
-    st.session_state.accel_z_queue = deque(maxlen=total_data_points)
+time_queue = deque(maxlen=total_data_points)
+accel_x_queue = deque(maxlen=total_data_points)
+accel_y_queue = deque(maxlen=total_data_points)
+accel_z_queue = deque(maxlen=total_data_points)
 
 # Lock for thread-safe operations
 data_lock = threading.Lock()
@@ -38,6 +36,8 @@ app.add_middleware(
 # Route for receiving sensor data
 @app.post("/data")
 async def upload_sensor_data(request: Request):
+    global time_queue, accel_x_queue, accel_y_queue, accel_z_queue
+
     try:
         # Parse the incoming JSON data
         data = await request.json()
@@ -52,11 +52,11 @@ async def upload_sensor_data(request: Request):
             for d in payload:
                 if d.get("name") in ["accelerometer"]:
                     ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
-                    if len(st.session_state.time_queue) == 0 or ts > st.session_state.time_queue[-1]:
-                        st.session_state.time_queue.append(ts)
-                        st.session_state.accel_x_queue.append(d["values"]["x"])
-                        st.session_state.accel_y_queue.append(d["values"]["y"])
-                        st.session_state.accel_z_queue.append(d["values"]["z"])
+                    if len(time_queue) == 0 or ts > time_queue[-1]:
+                        time_queue.append(ts)
+                        accel_x_queue.append(d["values"]["x"])
+                        accel_y_queue.append(d["values"]["y"])
+                        accel_z_queue.append(d["values"]["z"])
 
         return {"status": "success"}
 
@@ -85,14 +85,15 @@ def run_streamlit():
     # Create a placeholder for the plot
     placeholder = st.empty()
 
+    # Real-time plotting loop
     while True:
         # Convert deque to DataFrame
         with data_lock:
             data = pd.DataFrame({
-                "Time": list(st.session_state.time_queue),
-                "X": list(st.session_state.accel_x_queue),
-                "Y": list(st.session_state.accel_y_queue),
-                "Z": list(st.session_state.accel_z_queue),
+                "Time": list(time_queue),
+                "X": list(accel_x_queue),
+                "Y": list(accel_y_queue),
+                "Z": list(accel_z_queue),
             })
 
         # Render only if there is data
@@ -127,6 +128,7 @@ def run_streamlit():
 
             # Update layout
             fig.update_layout(
+                # title="Real-Time Accelerometer Data",
                 xaxis_title="Time",
                 height=600,
                 margin=dict(l=40, r=40, t=40, b=40),
@@ -138,7 +140,7 @@ def run_streamlit():
 
             # Update the plot in the placeholder
             with placeholder.container():
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key=f"plot-{time_lib.time()}")
 
         # Sleep for the refresh rate
         time_lib.sleep(refresh_rate)
