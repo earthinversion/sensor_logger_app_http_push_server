@@ -34,7 +34,7 @@ def init_database(sensor_data_to_store='gravity'):
     conn = sqlite3.connect(f"sensor_data_{sensor_data_to_store}.db")
     cursor = conn.cursor()
     cursor.execute(f'''
-        CREATE TABLE IF NOT EXISTS {sensor_data_to_store} (
+        CREATE TABLE IF NOT EXISTS {sensor_data_to_store}_data (
             timestamp DATETIME PRIMARY KEY,
             x REAL,
             y REAL,
@@ -44,7 +44,7 @@ def init_database(sensor_data_to_store='gravity'):
     # Create index on timestamp for faster queries
     cursor.execute(f'''
         CREATE INDEX IF NOT EXISTS idx_timestamp 
-        ON {sensor_data_to_store}(timestamp)
+        ON {sensor_data_to_store}_data(timestamp)
     ''')
     conn.commit()
     conn.close()
@@ -52,7 +52,7 @@ def init_database(sensor_data_to_store='gravity'):
 
 def store_data_in_db(timestamp, x, y, z):
     """Store sensor data in SQLite database"""
-    conn = sqlite3.connect("sensor_data.db")
+    conn = sqlite3.connect("sensor_data_accelerometer.db")
     cursor = conn.cursor()
     try:
         cursor.execute(
@@ -71,7 +71,7 @@ def store_data_in_db(timestamp, x, y, z):
 
 def store_gravity_data_in_db(timestamp, x, y, z):
     """Store sensor data in SQLite database"""
-    conn = sqlite3.connect("sensor_data.db")
+    conn = sqlite3.connect("sensor_data_gravity.db")
     cursor = conn.cursor()
     try:
         cursor.execute(
