@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-sensor_data_to_store = 'gravity' #'accelerometer'
+sensor_data_to_store = 'accelerometer' #'accelerometer'
 
 # Function to fetch the last 60*50 samples from the database
 def get_last_samples():
