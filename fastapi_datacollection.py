@@ -107,9 +107,9 @@ async def upload_sensor_data(request: Request):
             if d.get("name") in sensor_data_list_to_store:
                 ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
                 x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
-                if sensor_data_to_store == 'gravity':
+                if d.get("name") == 'gravity':
                     store_gravity_data_in_db(ts, x, y, z)
-                elif sensor_data_to_store == 'accelerometer':
+                elif d.get("name") == 'accelerometer':
                     store_data_in_db(ts, x, y, z)
                 processed_count += 1
 
