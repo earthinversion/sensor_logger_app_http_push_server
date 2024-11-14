@@ -8,6 +8,8 @@ import sqlite3
 from datetime import datetime, timedelta, timezone
 import requests
 import logging
+from pytz import timezone
+import pytz 
 
 # Configure logging
 logging.basicConfig(
@@ -56,8 +58,11 @@ def get_data_from_db(time_range_minutes):
         # Pass start_time in UTC ISO format
         df = pd.read_sql_query(query, conn, params=(start_time.strftime("%Y-%m-%dT%H:%M:%S"),))
         
+        # Define the local timezone
+        local_tz = timezone('America/Los_Angeles')  # Replace with your local timezone
+        
         # Convert timestamps from UTC to local time for visualization
-        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert('local')
+        df['timestamp'] = pd.to_datetime(df['timestamp']).dt.tz_localize('UTC').dt.tz_convert(local_tz)
         return df
     except Exception as e:
         logger.error(f"Error fetching data: {e}")
