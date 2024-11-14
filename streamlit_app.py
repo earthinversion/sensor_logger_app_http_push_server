@@ -145,6 +145,9 @@ def run_streamlit():
             time_lib.sleep(1)
             continue
 
+        # Ensure Time is in datetime format for Plotly
+        data["Time"] = pd.to_datetime(data["Time"])
+
         # Create a Plotly figure
         fig = go.Figure()
 
@@ -174,6 +177,7 @@ def run_streamlit():
 
         # Sleep before next update
         time_lib.sleep(0.5)
+
 
 # Run both FastAPI and Streamlit
 if __name__ == "__main__":
