@@ -10,10 +10,14 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
 # Shared data storage (deque with max length)
-time_queue = deque(maxlen=1000)
-accel_x_queue = deque(maxlen=1000)
-accel_y_queue = deque(maxlen=1000)
-accel_z_queue = deque(maxlen=1000)
+data_length_to_display = 60  # seconds
+sampling_rate = 50  # Hz
+total_data_points = data_length_to_display * sampling_rate
+
+time_queue = deque(maxlen=total_data_points)
+accel_x_queue = deque(maxlen=total_data_points)
+accel_y_queue = deque(maxlen=total_data_points)
+accel_z_queue = deque(maxlen=total_data_points)
 
 # Lock for thread-safe operations
 data_lock = threading.Lock()
@@ -124,11 +128,15 @@ def run_streamlit():
 
             # Update layout
             fig.update_layout(
-                title="Real-Time Accelerometer Data",
+                # title="Real-Time Accelerometer Data",
                 xaxis_title="Time",
-                height=800,
+                height=600,
                 margin=dict(l=40, r=40, t=40, b=40),
+                showlegend=False
             )
+            fig.update_yaxes(title_text="X", row=1, col=1)
+            fig.update_yaxes(title_text="Y", row=2, col=1)
+            fig.update_yaxes(title_text="Z", row=3, col=1)
 
             # Update the plot in the placeholder
             with placeholder.container():
