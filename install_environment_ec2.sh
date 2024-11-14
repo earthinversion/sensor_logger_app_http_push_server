@@ -7,9 +7,9 @@ sudo yum update -y
 sudo yum install -y git
 sudo yum install -y tmux
 
-# Set up Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# Set up Python virtual environment in home directory
+python3 -m venv ~/venv
+source ~/venv/bin/activate
 
 # Install required Python packages
 pip install fastapi uvicorn
