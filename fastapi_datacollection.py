@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def init_database(sensor_data_to_store):
+def init_database(sensor_data_to_store='gravity'):
     """Initialize SQLite database with required table"""
     conn = sqlite3.connect("sensor_data.db")
     cursor = conn.cursor()
@@ -152,6 +152,6 @@ async def get_stats():
         conn.close()
 
 if __name__ == "__main__":
-    init_database()
+    init_database(sensor_data_to_store)
     logger.info("Starting sensor data server...")
     uvicorn.run(app, host="0.0.0.0", port=56204)
