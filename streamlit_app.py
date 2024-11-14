@@ -17,13 +17,15 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+sensor_data_to_store = 'gravity' #'accelerometer'
+
 # Function to fetch the last 60*50 samples from the database
 def get_last_samples():
     conn = sqlite3.connect("sensor_data.db")
     try:
-        query = """
+        query = f"""
             SELECT timestamp, x, y, z 
-            FROM accelerometer_data 
+            FROM {sensor_data_to_store} 
             ORDER BY timestamp DESC
             LIMIT ?
         """

@@ -17,6 +17,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+sensor_data_to_store = 'gravity' #'accelerometer'
+
 app = FastAPI()
 
 # Enable CORS
@@ -27,12 +29,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-def init_database():
+def init_database(sensor_data_to_store):
     """Initialize SQLite database with required table"""
     conn = sqlite3.connect("sensor_data.db")
     cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS accelerometer_data (
+    cursor.execute(f'''
+        CREATE TABLE IF NOT EXISTS {sensor_data_to_store} (
             timestamp DATETIME PRIMARY KEY,
             x REAL,
             y REAL,
@@ -40,9 +42,9 @@ def init_database():
         )
     ''')
     # Create index on timestamp for faster queries
-    cursor.execute('''
+    cursor.execute(f'''
         CREATE INDEX IF NOT EXISTS idx_timestamp 
-        ON accelerometer_data(timestamp)
+        ON {sensor_data_to_store}(timestamp)
     ''')
     conn.commit()
     conn.close()
@@ -67,6 +69,25 @@ def store_data_in_db(timestamp, x, y, z):
     finally:
         conn.close()
 
+def store_gravity_data_in_db(timestamp, x, y, z):
+    """Store sensor data in SQLite database"""
+    conn = sqlite3.connect("sensor_data.db")
+    cursor = conn.cursor()
+    try:
+        cursor.execute(
+            "INSERT INTO gravity_data (timestamp, x, y, z) VALUES (?, ?, ?, ?)",
+            (timestamp, x, y, z)
+        )
+        conn.commit()
+        # print(f"Stored data at {timestamp}")
+    except sqlite3.IntegrityError:
+        pass  # Ignore duplicate timestamps
+    except Exception as e:
+        logger.error(f"Error storing data: {e}")
+        raise
+    finally:
+        conn.close()
+
 @app.post("/data")
 async def upload_sensor_data(request: Request):
     try:
@@ -78,17 +99,21 @@ async def upload_sensor_data(request: Request):
             return {"status": "error", "message": "Invalid payload format"}
         
         ## print all the keys in the payload
-        print("-----------------")
-        print(payload)
-        print("-----------------")
+        # print("-----------------")
+        # print(payload)
+        # print("-----------------")
         processed_count = 0
         for d in payload:
-            if d.get("name") in ["accelerometer"]:
+            if d.get("name") in [sensor_data_to_store]:
                 ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
                 x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
-                store_data_in_db(ts, x, y, z)
+                if sensor_data_to_store == 'gravity':
+                    store_gravity_data_in_db(ts, x, y, z)
+                elif sensor_data_to_store == 'accelerometer':
+                    store_data_in_db(ts, x, y, z)
                 processed_count += 1
 
+            
         logger.info(f"Processed {processed_count} data points successfully")
         return {"status": "success", "processed_count": processed_count}
 
@@ -110,12 +135,12 @@ async def get_stats():
     conn = sqlite3.connect("sensor_data.db")
     try:
         cursor = conn.cursor()
-        cursor.execute("""
+        cursor.execute(f"""
             SELECT 
                 COUNT(*) as total_records,
                 MIN(timestamp) as oldest_record,
                 MAX(timestamp) as newest_record
-            FROM accelerometer_data
+            FROM {sensor_data_to_store}
         """)
         total, oldest, newest = cursor.fetchone()
         return {
