@@ -48,7 +48,7 @@ def update_visualization(placeholder, plot_key):
         rows=3, cols=1,
         shared_xaxes=True,
         vertical_spacing=0.02,
-        subplot_titles=("X Component", "Y Component", "Z Component")
+        # subplot_titles=("X Component", "Y Component", "Z Component")
     )
 
     fig.add_trace(
@@ -65,7 +65,7 @@ def update_visualization(placeholder, plot_key):
     )
 
     fig.update_layout(
-        xaxis_title="Time",
+        # xaxis_title="Time",
         height=600,
         margin=dict(l=40, r=40, t=40, b=40),
         showlegend=False
@@ -99,7 +99,7 @@ def main():
         while auto_refresh:
             plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
             update_visualization(placeholder, plot_key)
-            st.sidebar.info(f"Refreshing every {refresh_rate} seconds")
+            # st.sidebar.info(f"Refreshing every {refresh_rate} seconds")
             time.sleep(refresh_rate)
             iteration += 1
     except Exception as e:
