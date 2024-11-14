@@ -44,7 +44,6 @@ def get_server_stats():
 def get_data_from_db(time_range_minutes):
     """Fetch data from SQLite database for the specified time range"""
     start_time = datetime.now() - timedelta(minutes=time_range_minutes)
-    
     conn = sqlite3.connect("sensor_data.db")
     try:
         query = """
@@ -53,7 +52,8 @@ def get_data_from_db(time_range_minutes):
             WHERE timestamp > ? 
             ORDER BY timestamp ASC
         """
-        df = pd.read_sql_query(query, conn, params=(start_time.isoformat(),))
+        # Pass start_time directly in ISO format
+        df = pd.read_sql_query(query, conn, params=(start_time.strftime("%Y-%m-%dT%H:%M:%S"),))
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df
     except Exception as e:
@@ -67,8 +67,9 @@ def update_visualization(placeholder, time_range):
     df = get_data_from_db(time_range)
     
     if df.empty:
-        placeholder.error(f"No data available for the selected time range {time_range}")
+        placeholder.warning(f"No data found in the last {time_range} minutes.")
         return
+
 
     fig = make_subplots(
         rows=3, cols=1,
