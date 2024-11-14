@@ -109,8 +109,8 @@ def run_streamlit():
         ax[2].set_ylabel("Acceleration (Z)")
         ax[2].legend(loc="upper right")
 
-        # Common time axis
-        ax[2].set_xlabel("Time")
+        # # Common time axis
+        # ax[2].set_xlabel("Time")
 
         # Rotate time labels for better visibility
         plt.setp(ax[2].xaxis.get_majorticklabels(), rotation=45)
@@ -119,7 +119,7 @@ def run_streamlit():
         with placeholder.container():
             st.pyplot(fig)
 
-        time_lib.sleep(1)  # Adjust refresh rate
+        time_lib.sleep(0.5)  # Adjust refresh rate
 
 # Run both FastAPI and Streamlit
 if __name__ == "__main__":
