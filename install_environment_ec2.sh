@@ -7,8 +7,13 @@ sudo yum update -y
 sudo yum install -y git
 sudo yum install -y tmux
 
-# Set up Python virtual environment in home directory
-python3 -m venv ~/venv
+# Set up Python virtual environment in home directory if it does not exist
+if [ ! -d "~/venv" ]; then
+    python3 -m venv ~/venv
+    echo "Virtual environment created."
+else
+    echo "Virtual environment already exists."
+fi
 source ~/venv/bin/activate
 
 # Install required Python packages
