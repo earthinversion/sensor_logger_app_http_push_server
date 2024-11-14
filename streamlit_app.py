@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import sqlite3
 import logging
-import time
+import time  # Correct import for time.sleep()
 
 # Configure logging
 logging.basicConfig(
@@ -37,7 +37,7 @@ def get_last_samples():
         conn.close()
 
 # Function to visualize the data
-def update_visualization(placeholder):
+def update_visualization(placeholder, plot_key):
     df = get_last_samples()
     
     if df.empty:
@@ -75,7 +75,7 @@ def update_visualization(placeholder):
     fig.update_yaxes(title_text="Z", row=3, col=1)
 
     with placeholder.container():
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, use_container_width=True, key=plot_key)
 
 # Main function
 def main():
@@ -95,17 +95,20 @@ def main():
     ) if auto_refresh else None
 
     try:
+        iteration = 0  # To generate unique keys for each plot
         while auto_refresh:
-            update_visualization(placeholder)
+            plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
+            update_visualization(placeholder, plot_key)
             st.sidebar.info(f"Refreshing every {refresh_rate} seconds")
             time.sleep(refresh_rate)
+            iteration += 1
     except Exception as e:
         logger.error(f"Error in visualization loop: {e}")
         st.error(f"An error occurred: {str(e)}")
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(placeholder)
+            update_visualization(placeholder, "manual_plot")
 
 if __name__ == "__main__":
     main()
