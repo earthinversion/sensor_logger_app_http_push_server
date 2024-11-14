@@ -45,22 +45,22 @@ def get_data_from_db(time_range_minutes):
     """Fetch data from SQLite database for the specified time range"""
     start_time = datetime.now() - timedelta(minutes=time_range_minutes)
     conn = sqlite3.connect("sensor_data.db")
-    try:
-        query = """
-            SELECT timestamp, x, y, z 
-            FROM accelerometer_data 
-            WHERE timestamp > ? 
-            ORDER BY timestamp ASC
-        """
-        # Pass start_time directly in ISO format
-        df = pd.read_sql_query(query, conn, params=(start_time.strftime("%Y-%m-%dT%H:%M:%S"),))
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
-        return df
-    except Exception as e:
-        logger.error(f"Error fetching data: {e}")
-        return pd.DataFrame()
-    finally:
-        conn.close()
+    # try:
+    query = """
+        SELECT timestamp, x, y, z 
+        FROM accelerometer_data 
+        WHERE timestamp > ? 
+        ORDER BY timestamp ASC
+    """
+    # Pass start_time directly in ISO format
+    df = pd.read_sql_query(query, conn, params=(start_time.strftime("%Y-%m-%dT%H:%M:%S"),))
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    return df
+    # except Exception as e:
+    #     logger.error(f"Error fetching data: {e}")
+    #     return pd.DataFrame()
+    # finally:
+    #     conn.close()
 
 def update_visualization(placeholder, time_range):
     """Update the visualization with current data"""
