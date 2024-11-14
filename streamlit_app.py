@@ -4,6 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import sqlite3
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -97,7 +98,7 @@ def main():
         while auto_refresh:
             update_visualization(placeholder)
             st.sidebar.info(f"Refreshing every {refresh_rate} seconds")
-            st.time.sleep(refresh_rate)
+            time.sleep(refresh_rate)
     except Exception as e:
         logger.error(f"Error in visualization loop: {e}")
         st.error(f"An error occurred: {str(e)}")
