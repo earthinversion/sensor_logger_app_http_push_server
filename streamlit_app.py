@@ -67,7 +67,7 @@ def update_visualization(placeholder, time_range):
     df = get_data_from_db(time_range)
     
     if df.empty:
-        placeholder.error("No data available for the selected time range")
+        placeholder.error(f"No data available for the selected time range {time_range}")
         return
 
     fig = make_subplots(

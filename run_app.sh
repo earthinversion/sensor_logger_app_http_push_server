@@ -8,4 +8,4 @@ python fastapi_datacollection.py
 
 # Run the visualization script
 
-# streamlit run visualization_script.py --server.port 5000
+# streamlit run streamlit_app.py --server.port 5000
