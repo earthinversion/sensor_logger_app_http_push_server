@@ -116,7 +116,7 @@ async def upload_sensor_data(request: Request):
                 processed_count += 1
 
             
-        logger.info(f"Processed {processed_count} data points successfully")
+        # logger.info(f"Processed {processed_count} data points successfully")
         return {"status": "success", "processed_count": processed_count}
 
     except Exception as e:
