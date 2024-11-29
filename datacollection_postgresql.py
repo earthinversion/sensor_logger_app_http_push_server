@@ -134,7 +134,9 @@ async def upload_sensor_data(request: Request):
 
             ## print if d.get("name") is not in sensor_data_list_to_store
             else:
-                logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
+                # logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
+                if d.get('name') == 'location':
+                    logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
         # Perform batch writes for each sensor type
         for sensor_name, sensor_data in data_batches.items():
             if sensor_data:
