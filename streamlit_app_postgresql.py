@@ -4,7 +4,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import psycopg2
 import logging
-import time  # Correct import for time.sleep()
+import time
 
 # Configure logging
 logging.basicConfig(
@@ -28,8 +28,8 @@ DB_CONFIG = {
 
 sensor_data_to_store = 'accelerometer'  # 'gravity' or 'accelerometer'
 
-# Function to fetch the last 60*50 samples from the database
-def get_last_samples(client_ip=None):
+# Function to fetch the last 'duration' seconds of samples from the database
+def get_last_samples(client_ip=None, duration=10):
     if client_ip is None:
         return pd.DataFrame()
 
@@ -39,12 +39,12 @@ def get_last_samples(client_ip=None):
             SELECT timestamp, x, y, z 
             FROM {sensor_data_to_store}_data 
             WHERE client_ip = %s
-            ORDER BY timestamp DESC
-            LIMIT %s
+            AND timestamp >= NOW() - INTERVAL '%s seconds'
+            ORDER BY timestamp ASC
         """
-        df = pd.read_sql_query(query, conn, params=(client_ip, 60 * 50,))
+        df = pd.read_sql_query(query, conn, params=(client_ip, duration))
         df['timestamp'] = pd.to_datetime(df['timestamp'])
-        return df.sort_values(by="timestamp")  # Ensure data is sorted in ascending order
+        return df
     except Exception as e:
         logger.error(f"Error fetching data: {e}")
         return pd.DataFrame()
@@ -52,8 +52,8 @@ def get_last_samples(client_ip=None):
         conn.close()
 
 # Function to visualize the data
-def update_visualization(client_ip, placeholder, plot_key):
-    df = get_last_samples(client_ip)
+def update_visualization(client_ip, placeholder, plot_key, duration):
+    df = get_last_samples(client_ip, duration)
     
     if df.empty:
         placeholder.warning("No data available.")
@@ -119,6 +119,15 @@ def main():
         options=get_all_client_ip()
     )
 
+    # Add a slider for waveform duration
+    duration = st.sidebar.slider(
+        "Select Duration (seconds)",
+        min_value=10,
+        max_value=300,
+        value=60,
+        step=10
+    )
+
     # Add auto-refresh option
     auto_refresh = st.sidebar.checkbox("Auto-refresh", value=True)
     refresh_rate = st.sidebar.slider(
@@ -133,7 +142,7 @@ def main():
         iteration = 0  # To generate unique keys for each plot
         while auto_refresh:
             plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
-            update_visualization(client_ip, placeholder, plot_key)
+            update_visualization(client_ip, placeholder, plot_key, duration)
             time.sleep(refresh_rate)
             iteration += 1
     except Exception as e:
@@ -142,7 +151,7 @@ def main():
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(client_ip, placeholder, "manual_plot")
+            update_visualization(client_ip, placeholder, "manual_plot", duration)
 
 if __name__ == "__main__":
     main()
