@@ -27,7 +27,7 @@ DB_CONFIG = {
 }
 
 # sensor_data_list_to_store = ['gravity', 'accelerometer', 'barometer', 'magnetometer', 'compass', 'totalacceleration', 'battery', 'location']
-sensor_data_list_to_store = ['gravity', 'accelerometer']
+sensor_data_list_to_store = ['gravity', 'accelerometer', 'accelerometeruncalibrated', 'gyroscope', 'totalacceleration']
 
 app = FastAPI()
 
@@ -101,6 +101,25 @@ async def init_database(sensor_data_to_store='gravity'):
         await conn.execute(query)
     logger.info(f"Table for {sensor_data_to_store} initialized successfully")
 
+async def init_location_table():
+    """Initialize the location table"""
+    query = '''
+        CREATE TABLE IF NOT EXISTS location_data (
+            timestamp TIMESTAMP PRIMARY KEY,
+            client_ip TEXT,
+            latitude REAL,
+            longitude REAL,
+            altitude REAL,
+            horizontal_accuracy REAL,
+            vertical_accuracy REAL
+        );
+        CREATE INDEX IF NOT EXISTS idx_location_timestamp 
+        ON location_data (timestamp);
+    '''
+    async with app.state.db_pool.acquire() as conn:
+        await conn.execute(query)
+    logger.info("Location table initialized successfully")
+
 async def store_data_in_db(sensor_name, data):
     """Store sensor data in PostgreSQL database asynchronously"""
     query = f"""
@@ -110,6 +129,16 @@ async def store_data_in_db(sensor_name, data):
     """
     async with app.state.db_pool.acquire() as conn:
         await conn.executemany(query, data)
+
+async def store_location_data(location_data):
+    """Store location data in the database asynchronously"""
+    query = """
+        INSERT INTO location_data (timestamp, client_ip, latitude, longitude, altitude, horizontal_accuracy, vertical_accuracy) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
+        ON CONFLICT (timestamp) DO NOTHING
+    """
+    async with app.state.db_pool.acquire() as conn:
+        await conn.executemany(query, location_data)
 
 @app.post("/data")
 async def upload_sensor_data(request: Request):
@@ -123,6 +152,7 @@ async def upload_sensor_data(request: Request):
         
         client_ip = request.client.host
         data_batches = {"gravity": [], "accelerometer": []}
+        location_data = []
         processed_count = 0
         
         for d in payload:
@@ -131,16 +161,30 @@ async def upload_sensor_data(request: Request):
                 x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
                 data_batches[d["name"]].append((ts, client_ip, x, y, z))
                 processed_count += 1
+            elif d.get("name") == "location":
+                ts = datetime.fromtimestamp(d["time"] / 1_000_000_000)
+                location = d["values"]
+                latitude = location.get("latitude")
+                longitude = location.get("longitude")
+                altitude = location.get("altitude")
+                horizontal_accuracy = location.get("horizontalAccuracy")
+                vertical_accuracy = location.get("verticalAccuracy")
+                location_data.append((ts, client_ip, latitude, longitude, altitude, horizontal_accuracy, vertical_accuracy))
 
-            ## print if d.get("name") is not in sensor_data_list_to_store
-            else:
-                # logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
-                if d.get('name') == 'location':
-                    logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
+            # ## print if d.get("name") is not in sensor_data_list_to_store
+            # else:
+            #     # logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
+            #     if d.get('name') == 'location':
+            #         logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
+            #         # location {'bearingAccuracy': 0, 'speedAccuracy': 1.5, 'verticalAccuracy': 1.5512449741363525, 'horizontalAccuracy': 32.0989990234375, 'speed': 0.008591005578637123, 'bearing': 0, 'altitude': 68.80000305175781, 'longitude': -122.2597648, 'latitude': 37.8743682}
         # Perform batch writes for each sensor type
         for sensor_name, sensor_data in data_batches.items():
             if sensor_data:
                 await store_data_in_db(sensor_name, sensor_data)
+
+        # Store location data
+        if location_data:
+            await store_location_data(location_data)
 
         return {"status": "success", "processed_count": processed_count}
 
