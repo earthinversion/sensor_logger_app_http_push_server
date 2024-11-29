@@ -151,7 +151,7 @@ async def upload_sensor_data(request: Request):
             return {"status": "error", "message": "Invalid payload format"}
         
         client_ip = request.client.host
-        data_batches = {"gravity": [], "accelerometer": []}
+        data_batches = {"gravity": [], "accelerometer": [], "accelerometeruncalibrated": [], "gyroscope": [], "totalacceleration": []}
         location_data = []
         processed_count = 0
         
