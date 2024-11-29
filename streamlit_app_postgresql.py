@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import psycopg2
+from sqlalchemy import create_engine
 import logging
 import time
 
@@ -26,6 +26,10 @@ DB_CONFIG = {
     "port": 5432
 }
 
+# Create SQLAlchemy engine
+DB_URI = f"postgresql://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['dbname']}"
+engine = create_engine(DB_URI)
+
 sensor_data_to_store = 'accelerometer'  # 'gravity' or 'accelerometer'
 
 # Function to fetch the last 'duration' seconds of samples from the database
@@ -33,23 +37,20 @@ def get_last_samples(client_ip=None, duration=10):
     if client_ip is None:
         return pd.DataFrame()
 
-    conn = psycopg2.connect(**DB_CONFIG)
     try:
         query = f"""
             SELECT timestamp, x, y, z 
             FROM {sensor_data_to_store}_data 
-            WHERE client_ip = %s
-            AND timestamp >= NOW() - INTERVAL '%s seconds'
+            WHERE client_ip = '{client_ip}'
+            AND timestamp >= NOW() - INTERVAL '{duration} seconds'
             ORDER BY timestamp ASC
         """
-        df = pd.read_sql_query(query, conn, params=(client_ip, duration))
+        df = pd.read_sql_query(query, engine)
         df['timestamp'] = pd.to_datetime(df['timestamp'])
         return df
     except Exception as e:
         logger.error(f"Error fetching data: {e}")
         return pd.DataFrame()
-    finally:
-        conn.close()
 
 # Function to visualize the data
 def update_visualization(client_ip, placeholder, plot_key, duration):
@@ -92,19 +93,16 @@ def update_visualization(client_ip, placeholder, plot_key, duration):
 
 # Function to get all client_ip in the database
 def get_all_client_ip():
-    conn = psycopg2.connect(**DB_CONFIG)
     try:
         query = f"""
             SELECT DISTINCT client_ip
             FROM {sensor_data_to_store}_data
         """
-        df = pd.read_sql_query(query, conn)
+        df = pd.read_sql_query(query, engine)
         return df['client_ip'].tolist()
     except Exception as e:
         logger.error(f"Error fetching data: {e}")
         return []
-    finally:
-        conn.close()
 
 # Main function
 def main():
