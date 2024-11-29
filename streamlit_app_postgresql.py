@@ -3,6 +3,8 @@ import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from sqlalchemy import create_engine
+from datetime import datetime
+from pytz import timezone
 import logging
 import time
 
@@ -32,6 +34,9 @@ engine = create_engine(DB_URI)
 
 sensor_data_to_store = 'accelerometer'  # 'gravity' or 'accelerometer'
 
+# Specify the local time zone
+LOCAL_TIMEZONE = timezone("America/Los_Angeles")  # Replace with your local time zone
+
 # Function to fetch the last 'duration' seconds of samples from the database
 def get_last_samples(client_ip=None, duration=10):
     if client_ip is None:
@@ -46,7 +51,7 @@ def get_last_samples(client_ip=None, duration=10):
             ORDER BY timestamp ASC
         """
         df = pd.read_sql_query(query, engine)
-        df['timestamp'] = pd.to_datetime(df['timestamp'])
+        df['timestamp'] = pd.to_datetime(df['timestamp'], utc=True).dt.tz_convert(LOCAL_TIMEZONE)  # Convert to local time
         return df
     except Exception as e:
         logger.error(f"Error fetching data: {e}")
