@@ -104,7 +104,10 @@ async def upload_sensor_data(request: Request):
                 x, y, z = d["values"]["x"], d["values"]["y"], d["values"]["z"]
                 data_batches[d["name"]].append((ts, client_ip, x, y, z))
                 processed_count += 1
-        
+
+            ## print if d.get("name") is not in sensor_data_list_to_store
+            else:
+                logger.warning(f"Invalid sensor data type: {d.get('name')}")
         # Perform batch writes for each sensor type
         for sensor_name, sensor_data in data_batches.items():
             if sensor_data:

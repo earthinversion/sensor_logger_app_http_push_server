@@ -1,4 +1,4 @@
-## Sensorlog Realtime Visualization
+## Sensor logger App Realtime Visualization
 
 ```bash
 sudo yum install git
@@ -33,7 +33,9 @@ git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.g
 
 
 
-streamlit run streamlit_app.py --server.port 5000
+# streamlit run streamlit_app.py --server.port 5000
+
+python datacollection_postgresql.py #to collect smartphone data to postgresql server asynchronously
 streamlit run streamlit_app_postgresql.py --server.port 5000
 
 # ## install redis from source
@@ -43,8 +45,6 @@ streamlit run streamlit_app_postgresql.py --server.port 5000
 # cd redis-stable
 # make
 # sudo make install
-
-
 
 ```
 
