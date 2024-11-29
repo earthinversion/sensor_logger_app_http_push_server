@@ -27,7 +27,7 @@ DB_CONFIG = {
 }
 
 # sensor_data_list_to_store = ['gravity', 'accelerometer', 'barometer', 'magnetometer', 'compass', 'totalacceleration', 'battery', 'location']
-sensor_data_list_to_store = ['gravity', 'accelerometer', 'accelerometeruncalibrated', 'gyroscope', 'totalacceleration']
+sensor_data_list_to_store = ['gravity', 'accelerometer'] #,'accelerometeruncalibrated', 'gyroscope', 'totalacceleration']
 
 app = FastAPI()
 
@@ -189,7 +189,7 @@ async def upload_sensor_data(request: Request):
         return {"status": "success", "processed_count": processed_count}
 
     except Exception as e:
-        logger.error(f"Error processing data: {e}")
+        logger.exception(f"Error processing data: {e}")
         return {"status": "error", "message": str(e)}
 
 @app.get("/")
