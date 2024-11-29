@@ -48,7 +48,7 @@ async def startup():
         host=DB_CONFIG["host"],
         port=DB_CONFIG["port"],
         min_size=1,
-        max_size=10  # Adjust the max size based on your concurrency needs
+        max_size=30  # Adjust based on the expected load
     )
     for sensor_data_to_store in sensor_data_list_to_store:
         await init_database(sensor_data_to_store)
