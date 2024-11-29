@@ -76,11 +76,11 @@ def get_last_samples(client_ip=None, duration=10):
         return pd.DataFrame()
 
 # Function to visualize the data
-def update_visualization(client_ip, placeholder, plot_key, duration):
+def update_visualization(client_ip, location_placeholder, placeholder, plot_key, duration):
     # Fetch the location data
     location_data = get_location_data(client_ip)
     if location_data:
-        st.markdown(
+        location_placeholder.markdown(
             f"""
             **Location Information:**
             - **Latitude:** {location_data.get('latitude', 'N/A')}
@@ -89,7 +89,8 @@ def update_visualization(client_ip, placeholder, plot_key, duration):
             """
         )
     else:
-        st.warning("No location data available for this client.")
+        location_placeholder.warning("No location data available for this client.")
+
 
     # Fetch sensor data and create plots
     df = get_last_samples(client_ip, duration)
@@ -147,6 +148,7 @@ def main():
     st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
     
     # Create a placeholder for the plot
+    location_placeholder = st.empty()
     placeholder = st.empty()
 
     # Add a dropdown for selecting client_ip
@@ -178,7 +180,7 @@ def main():
         iteration = 0  # To generate unique keys for each plot
         while auto_refresh:
             plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
-            update_visualization(client_ip, placeholder, plot_key, duration)
+            update_visualization(client_ip, location_placeholder, placeholder, plot_key, duration)
             time.sleep(refresh_rate)
             iteration += 1
     except Exception as e:
@@ -187,7 +189,7 @@ def main():
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(client_ip, placeholder, "manual_plot", duration)
+            update_visualization(client_ip, location_placeholder, placeholder, "manual_plot", duration)
 
 if __name__ == "__main__":
     main()
