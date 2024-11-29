@@ -35,7 +35,25 @@ engine = create_engine(DB_URI)
 sensor_data_to_store = 'accelerometer'  # 'gravity' or 'accelerometer'
 
 # Specify the local time zone
-LOCAL_TIMEZONE = timezone("America/Los_Angeles")  # Replace with your local time zone
+LOCAL_TIMEZONE = timezone("America/Los_Angeles")  
+
+def get_location_data(client_ip):
+    """Fetch the most recent location data for a given client_ip."""
+    try:
+        query = f"""
+            SELECT latitude, longitude, altitude
+            FROM location_data
+            WHERE client_ip = '{client_ip}'
+            ORDER BY timestamp DESC
+            LIMIT 1
+        """
+        df = pd.read_sql_query(query, engine)
+        if not df.empty:
+            return df.iloc[0].to_dict()
+        return {}
+    except Exception as e:
+        logger.error(f"Error fetching location data for client_ip {client_ip}: {e}")
+        return {}
 
 # Function to fetch the last 'duration' seconds of samples from the database
 def get_last_samples(client_ip=None, duration=10):
@@ -59,6 +77,21 @@ def get_last_samples(client_ip=None, duration=10):
 
 # Function to visualize the data
 def update_visualization(client_ip, placeholder, plot_key, duration):
+    # Fetch the location data
+    location_data = get_location_data(client_ip)
+    if location_data:
+        st.markdown(
+            f"""
+            **Location Information:**
+            - **Latitude:** {location_data.get('latitude', 'N/A')}
+            - **Longitude:** {location_data.get('longitude', 'N/A')}
+            - **Altitude:** {location_data.get('altitude', 'N/A')} meters
+            """
+        )
+    else:
+        st.warning("No location data available for this client.")
+
+    # Fetch sensor data and create plots
     df = get_last_samples(client_ip, duration)
     
     if df.empty:
