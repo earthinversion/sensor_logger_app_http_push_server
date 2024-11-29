@@ -80,6 +80,8 @@ async def startup():
     for sensor_data_to_store in sensor_data_list_to_store:
         await init_database(sensor_data_to_store)
 
+    await init_location_table() # Initialize the location table
+
 @app.on_event("shutdown")
 async def shutdown():
     await app.state.db_pool.close()
