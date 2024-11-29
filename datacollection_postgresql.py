@@ -26,6 +26,7 @@ DB_CONFIG = {
     "port": 5432
 }
 
+# sensor_data_list_to_store = ['gravity', 'accelerometer', 'barometer', 'magnetometer', 'compass', 'totalacceleration', 'battery', 'location']
 sensor_data_list_to_store = ['gravity', 'accelerometer']
 
 app = FastAPI()
@@ -133,7 +134,7 @@ async def upload_sensor_data(request: Request):
 
             ## print if d.get("name") is not in sensor_data_list_to_store
             else:
-                logger.warning(f"Invalid sensor data type: {d.get('name')}")
+                logger.warning(f"Invalid sensor data type: {d.get('name')} {d.get('values')}")
         # Perform batch writes for each sensor type
         for sensor_name, sensor_data in data_batches.items():
             if sensor_data:
