@@ -68,5 +68,4 @@ streamlit run streamlit_app.py --server.port 5000
 
 
 ## Access the app
-<!-- - http://54.245.66.246:5000/ -->
-- http://35.89.184.162:5000/
+
