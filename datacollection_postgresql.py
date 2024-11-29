@@ -27,7 +27,7 @@ DB_CONFIG = {
 }
 
 # sensor_data_list_to_store = ['gravity', 'accelerometer', 'barometer', 'magnetometer', 'compass', 'totalacceleration', 'battery', 'location']
-sensor_data_list_to_store = ['gravity', 'accelerometer'] #,'accelerometeruncalibrated', 'gyroscope', 'totalacceleration']
+sensor_data_list_to_store = ['gravity', 'accelerometer','accelerometeruncalibrated', 'gyroscope', 'totalacceleration']
 
 app = FastAPI()
 
