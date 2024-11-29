@@ -4,11 +4,28 @@
 sudo yum install git
 sudo yum install -y tmux
 
+## installing docker
+sudo yum update -y
+sudo yum install -y docker
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker ec2-user
+
+
+sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+
+
+## python env
 python3 -m venv venv
 source venv/bin/activate
 pip install fastapi uvicorn
 pip install plotly
 pip install streamlit
+
+sudo yum groupinstall "Development Tools"
+sudo yum install -y postgresql-devel python3-devel
+
 pip install psycopg2 #to use postgresql instead of sqlite
 
 git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
