@@ -22,6 +22,7 @@ source venv/bin/activate
 pip install fastapi uvicorn
 pip install plotly
 pip install streamlit
+pip install sqlalchemy
 
 sudo yum groupinstall "Development Tools"
 sudo yum install -y postgresql-devel python3-devel

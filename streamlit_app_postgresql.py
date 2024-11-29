@@ -53,7 +53,7 @@ def get_last_samples(client_ip=None, duration=10):
         return pd.DataFrame()
 
 # Function to visualize the data
-def update_visualization(client_ip, placeholder, plot_key, duration):
+def update_visualization(client_ip, placeholder, duration):
     df = get_last_samples(client_ip, duration)
     
     if df.empty:
@@ -88,8 +88,7 @@ def update_visualization(client_ip, placeholder, plot_key, duration):
     fig.update_yaxes(title_text="Y", row=2, col=1)
     fig.update_yaxes(title_text="Z", row=3, col=1)
 
-    with placeholder.container():
-        st.plotly_chart(fig, use_container_width=True, key=plot_key)
+    placeholder.plotly_chart(fig, use_container_width=True)
 
 # Function to get all client_ip in the database
 def get_all_client_ip():
@@ -136,20 +135,16 @@ def main():
         step=0.1
     ) if auto_refresh else None
 
-    try:
-        iteration = 0  # To generate unique keys for each plot
-        while auto_refresh:
-            plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
-            update_visualization(client_ip, placeholder, plot_key, duration)
+    while True:
+        update_visualization(client_ip, placeholder, duration)
+        if auto_refresh:
             time.sleep(refresh_rate)
-            iteration += 1
-    except Exception as e:
-        logger.error(f"Error in visualization loop: {e}")
-        st.error(f"An error occurred: {str(e)}")
+        else:
+            break
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(client_ip, placeholder, "manual_plot", duration)
+            update_visualization(client_ip, placeholder, duration)
 
 if __name__ == "__main__":
     main()
