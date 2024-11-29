@@ -9,8 +9,11 @@ source venv/bin/activate
 pip install fastapi uvicorn
 pip install plotly
 pip install streamlit
+pip install psycopg2 #to use postgresql instead of sqlite
 
 git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
+
+
 
 streamlit run streamlit_app.py --server.port 5000
 
