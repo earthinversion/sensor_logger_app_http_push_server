@@ -38,9 +38,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+async def create_database_if_not_exists():
+    """Create the database if it doesn't exist"""
+    try:
+        # Connect to the default 'postgres' database
+        conn = await asyncpg.connect(
+            database="postgres",
+            user=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            host=DB_CONFIG["host"],
+            port=DB_CONFIG["port"]
+        )
+        # Check if the database exists
+        query = f"SELECT 1 FROM pg_database WHERE datname = '{DB_CONFIG['dbname']}'"
+        result = await conn.fetch(query)
+        if not result:
+            # Database does not exist; create it
+            await conn.execute(f"CREATE DATABASE {DB_CONFIG['dbname']}")
+            logger.info(f"Database '{DB_CONFIG['dbname']}' created successfully.")
+        else:
+            logger.info(f"Database '{DB_CONFIG['dbname']}' already exists.")
+    except Exception as e:
+        logger.error(f"Error creating database: {e}")
+    finally:
+        await conn.close()
+
 # Create database pool
 @app.on_event("startup")
 async def startup():
+    await create_database_if_not_exists()
     app.state.db_pool = await asyncpg.create_pool(
         database=DB_CONFIG["dbname"],
         user=DB_CONFIG["user"],
