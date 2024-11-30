@@ -18,13 +18,12 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Configure logging
+# Configure logging to save to a file
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('streamlit_app.log'),
-        logging.StreamHandler()
+        logging.FileHandler('streamlit_app.log')
     ]
 )
 logger = logging.getLogger(__name__)
@@ -145,9 +144,9 @@ def update_visualization(client_ip, duration):
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
-    spectrogram_figs.add_trace(plot_spectrogram(df["x"].values, "X").data[0], row=1, col=1)
-    spectrogram_figs.add_trace(plot_spectrogram(df["y"].values, "Y").data[0], row=2, col=1)
-    spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1)
+    spectrogram_figs.add_trace(plot_spectrogram(df["x"].values, "X").data[0], row=1, col=1, key="spectrogram_x")
+    spectrogram_figs.add_trace(plot_spectrogram(df["y"].values, "Y").data[0], row=2, col=1, key="spectrogram_y")
+    spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1, key="spectrogram_z")
 
     spectrogram_figs.update_layout(
         width=600,
@@ -221,17 +220,17 @@ def main():
             waveform_col, spectrogram_col = st.columns([1, 1])
 
             with waveform_col:
-                waveform_placeholder.plotly_chart(waveform_fig)
+                waveform_placeholder.plotly_chart(waveform_fig, key=f"waveform_{client_ip}")
 
             with spectrogram_col:
-                spectrogram_placeholder.plotly_chart(spectrogram_figs)
+                spectrogram_placeholder.plotly_chart(spectrogram_figs, key=f"spectrogram_{client_ip}")
 
 
             time.sleep(refresh_rate)
 
     except Exception as e:
-        logger.error(f"Error: {e}")
-        st.error("An error occurred.")
+        # logger.error(f"Error: {e}")
+        st.error("Something went wrong! Please check the logs for more information.")
 
 
 if __name__ == "__main__":
