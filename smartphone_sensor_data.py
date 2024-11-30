@@ -83,22 +83,22 @@ def get_last_samples(client_ip=None, duration=10):
 def plot_spectrogram(data, component, fs=50):
     """Generate a spectrogram plot for a single component."""
     f, t, Sxx = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
-    spectrogram_fig = go.Figure(data=go.Heatmap(
+    fig = go.Figure(data=go.Heatmap(
         x=t,
         y=f,
         z=10 * np.log10(Sxx),  # Convert power to dB
         colorscale='Jet'
     ))
-    spectrogram_fig.update_layout(
+    fig.update_layout(
         title=f"Spectrogram ({component}-axis)",
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
-        height=400
+        height=600,  # Match waveform plot height
     )
-    return spectrogram_fig
+    return fig
 
 
-def update_visualization(client_ip, duration):
+def update_visualization(client_ip, duration, waveform_placeholder, spectrogram_placeholder):
     """Update waveform and spectrogram visualizations."""
     # Fetch the location data
     location_data = get_location_data(client_ip)
@@ -109,39 +109,51 @@ def update_visualization(client_ip, duration):
     - **Altitude:** {location_data.get('altitude', 'N/A')} meters
     """ if location_data else "No location data available for this client."
 
-    # Fetch sensor data and create plots
+    # Fetch sensor data
     df = get_last_samples(client_ip, duration)
     if df.empty:
-        return location_info, None, None
+        with waveform_placeholder.container():
+            st.warning("No waveform data available.")
+        with spectrogram_placeholder.container():
+            st.warning("No spectrogram data available.")
+        return location_info
 
-    # Plot waveforms
+    # Create waveform plot
     waveform_fig = make_subplots(
         rows=3, cols=1,
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
-
     waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["x"], mode="lines", name="X"), row=1, col=1)
     waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["y"], mode="lines", name="Y"), row=2, col=1)
     waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["z"], mode="lines", name="Z"), row=3, col=1)
-
     waveform_fig.update_layout(
         height=600,
         margin=dict(l=40, r=40, t=40, b=40),
-        showlegend=False
+        showlegend=False,
     )
     waveform_fig.update_yaxes(title_text="X", row=1, col=1)
     waveform_fig.update_yaxes(title_text="Y", row=2, col=1)
     waveform_fig.update_yaxes(title_text="Z", row=3, col=1)
 
-    # Generate spectrograms for all components
-    spectrogram_figs = {
-        "X": plot_spectrogram(df["x"].values, "X"),
-        "Y": plot_spectrogram(df["y"].values, "Y"),
-        "Z": plot_spectrogram(df["z"].values, "Z"),
-    }
+    # Create spectrogram plots for X, Y, Z
+    spectrogram_figs = make_subplots(
+        rows=3, cols=1,
+        shared_xaxes=True,
+        vertical_spacing=0.02,
+    )
+    spectrogram_figs.add_trace(go.Heatmap(z=plot_spectrogram(df["x"].values, "X")["data"][0]["z"]), row=1, col=1)
+    spectrogram_figs.add_trace(go.Heatmap(z=plot_spectrogram(df["y"].values, "Y")["data"][0]["z"]), row=2, col=1)
+    spectrogram_figs.add_trace(go.Heatmap(z=plot_spectrogram(df["z"].values, "Z")["data"][0]["z"]), row=3, col=1)
 
-    return location_info, waveform_fig, spectrogram_figs
+    # Update placeholders
+    with waveform_placeholder.container():
+        st.plotly_chart(waveform_fig, use_container_width=True)
+
+    with spectrogram_placeholder.container():
+        st.plotly_chart(spectrogram_figs, use_container_width=True)
+
+    return location_info
 
 
 def get_all_client_ip():
@@ -192,24 +204,12 @@ def main():
 
     try:
         while auto_refresh:
-            location_info, waveform_fig, spectrogram_figs = update_visualization(client_ip, duration)
+            location_info = update_visualization(client_ip, duration, waveform_placeholder, spectrogram_placeholder)
 
             # Update location information
             with location_placeholder.container():
                 st.markdown("### Location Data")
                 st.markdown(location_info)
-
-            # Update waveform plot
-            with waveform_placeholder.container():
-                if waveform_fig:
-                    st.markdown("### Waveform")
-                    st.plotly_chart(waveform_fig, use_container_width=True)
-
-            # Update spectrogram plots for X, Y, Z
-            with spectrogram_placeholder.container():
-                st.markdown("### Spectrograms")
-                for axis, fig in spectrogram_figs.items():
-                    st.plotly_chart(fig, use_container_width=True)
 
             time.sleep(refresh_rate)
 
