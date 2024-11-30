@@ -39,6 +39,7 @@ sensor_data_to_store = 'accelerometer'  # 'gravity' or 'accelerometer'
 # Specify the local time zone
 LOCAL_TIMEZONE = timezone("America/Los_Angeles")
 
+
 def get_location_data(client_ip):
     """Fetch the most recent location data for a given client_ip."""
     try:
@@ -56,6 +57,7 @@ def get_location_data(client_ip):
     except Exception as e:
         logger.error(f"Error fetching location data for client_ip {client_ip}: {e}")
         return {}
+
 
 def get_last_samples(client_ip=None, duration=10):
     """Fetch the last 'duration' seconds of accelerometer data."""
@@ -77,8 +79,9 @@ def get_last_samples(client_ip=None, duration=10):
         logger.error(f"Error fetching data: {e}")
         return pd.DataFrame()
 
-def plot_spectrogram(data, fs=50):
-    """Generate a spectrogram plot from the accelerometer data."""
+
+def plot_spectrogram(data, component, fs=50):
+    """Generate a spectrogram plot for a single component."""
     f, t, Sxx = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
     spectrogram_fig = go.Figure(data=go.Heatmap(
         x=t,
@@ -87,12 +90,13 @@ def plot_spectrogram(data, fs=50):
         colorscale='Jet'
     ))
     spectrogram_fig.update_layout(
-        title="Spectrogram (X-axis Data)",
+        title=f"Spectrogram ({component}-axis)",
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
         height=400
     )
     return spectrogram_fig
+
 
 def update_visualization(client_ip, duration):
     """Update waveform and spectrogram visualizations."""
@@ -111,29 +115,34 @@ def update_visualization(client_ip, duration):
         return location_info, None, None
 
     # Plot waveforms
-    fig = make_subplots(
+    waveform_fig = make_subplots(
         rows=3, cols=1,
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
 
-    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["x"], mode="lines"), row=1, col=1)
-    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["y"], mode="lines"), row=2, col=1)
-    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["z"], mode="lines"), row=3, col=1)
+    waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["x"], mode="lines", name="X"), row=1, col=1)
+    waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["y"], mode="lines", name="Y"), row=2, col=1)
+    waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["z"], mode="lines", name="Z"), row=3, col=1)
 
-    fig.update_layout(
+    waveform_fig.update_layout(
         height=600,
         margin=dict(l=40, r=40, t=40, b=40),
         showlegend=False
     )
-    fig.update_yaxes(title_text="X", row=1, col=1)
-    fig.update_yaxes(title_text="Y", row=2, col=1)
-    fig.update_yaxes(title_text="Z", row=3, col=1)
+    waveform_fig.update_yaxes(title_text="X", row=1, col=1)
+    waveform_fig.update_yaxes(title_text="Y", row=2, col=1)
+    waveform_fig.update_yaxes(title_text="Z", row=3, col=1)
 
-    # Plot spectrogram for "x" component
-    spectrogram_fig = plot_spectrogram(df["x"].values)
+    # Generate spectrograms for all components
+    spectrogram_figs = {
+        "X": plot_spectrogram(df["x"].values, "X"),
+        "Y": plot_spectrogram(df["y"].values, "Y"),
+        "Z": plot_spectrogram(df["z"].values, "Z"),
+    }
 
-    return location_info, fig, spectrogram_fig
+    return location_info, waveform_fig, spectrogram_figs
+
 
 def get_all_client_ip():
     """Fetch all unique client_ip values from the database."""
@@ -147,6 +156,7 @@ def get_all_client_ip():
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
         return []
+
 
 def main():
     st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
@@ -178,33 +188,35 @@ def main():
 
     # Create placeholders
     location_placeholder = st.empty()
-    waveform_placeholder = st.empty()
-    spectrogram_placeholder = st.empty()
+    waveform_placeholder, spectrogram_placeholder = st.columns(2)
 
     try:
         while auto_refresh:
-            location_info, waveform_fig, spectrogram_fig = update_visualization(client_ip, duration)
+            location_info, waveform_fig, spectrogram_figs = update_visualization(client_ip, duration)
 
-            # Update placeholders
+            # Update location information
             with location_placeholder.container():
                 st.markdown("### Location Data")
                 st.markdown(location_info)
 
+            # Update waveform plot
             with waveform_placeholder.container():
                 if waveform_fig:
                     st.markdown("### Waveform")
                     st.plotly_chart(waveform_fig, use_container_width=True)
 
+            # Update spectrogram plots for X, Y, Z
             with spectrogram_placeholder.container():
-                if spectrogram_fig:
-                    st.markdown("### Spectrogram")
-                    st.plotly_chart(spectrogram_fig, use_container_width=True)
+                st.markdown("### Spectrograms")
+                for axis, fig in spectrogram_figs.items():
+                    st.plotly_chart(fig, use_container_width=True)
 
             time.sleep(refresh_rate)
 
     except Exception as e:
         logger.error(f"Error: {e}")
         st.error("An error occurred.")
+
 
 if __name__ == "__main__":
     main()
