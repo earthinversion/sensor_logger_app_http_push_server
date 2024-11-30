@@ -98,7 +98,7 @@ def plot_spectrogram(data, component, fs=50):
     return fig
 
 
-def update_visualization(client_ip, duration, waveform_placeholder, spectrogram_placeholder):
+def update_visualization(client_ip, duration):
     """Update waveform and spectrogram visualizations."""
     # Fetch the location data
     location_data = get_location_data(client_ip)
@@ -112,11 +112,7 @@ def update_visualization(client_ip, duration, waveform_placeholder, spectrogram_
     # Fetch sensor data
     df = get_last_samples(client_ip, duration)
     if df.empty:
-        with waveform_placeholder.container():
-            st.warning("No waveform data available.")
-        with spectrogram_placeholder.container():
-            st.warning("No spectrogram data available.")
-        return location_info
+        return location_info, None, None
 
     # Create waveform plot
     waveform_fig = make_subplots(
@@ -136,24 +132,17 @@ def update_visualization(client_ip, duration, waveform_placeholder, spectrogram_
     waveform_fig.update_yaxes(title_text="Y", row=2, col=1)
     waveform_fig.update_yaxes(title_text="Z", row=3, col=1)
 
-    # Create spectrogram plots for X, Y, Z
+    # Generate spectrograms for all components
     spectrogram_figs = make_subplots(
         rows=3, cols=1,
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
-    spectrogram_figs.add_trace(go.Heatmap(z=plot_spectrogram(df["x"].values, "X")["data"][0]["z"]), row=1, col=1)
-    spectrogram_figs.add_trace(go.Heatmap(z=plot_spectrogram(df["y"].values, "Y")["data"][0]["z"]), row=2, col=1)
-    spectrogram_figs.add_trace(go.Heatmap(z=plot_spectrogram(df["z"].values, "Z")["data"][0]["z"]), row=3, col=1)
+    spectrogram_figs.add_trace(plot_spectrogram(df["x"].values, "X").data[0], row=1, col=1)
+    spectrogram_figs.add_trace(plot_spectrogram(df["y"].values, "Y").data[0], row=2, col=1)
+    spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1)
 
-    # Update placeholders
-    with waveform_placeholder.container():
-        st.plotly_chart(waveform_fig, use_container_width=True)
-
-    with spectrogram_placeholder.container():
-        st.plotly_chart(spectrogram_figs, use_container_width=True)
-
-    return location_info
+    return location_info, waveform_fig, spectrogram_figs
 
 
 def get_all_client_ip():
@@ -198,18 +187,23 @@ def main():
         step=0.1
     ) if auto_refresh else None
 
-    # Create placeholders
+    # Placeholders for location, waveform, and spectrogram
     location_placeholder = st.empty()
     waveform_placeholder, spectrogram_placeholder = st.columns(2)
 
     try:
         while auto_refresh:
-            location_info = update_visualization(client_ip, duration, waveform_placeholder, spectrogram_placeholder)
+            location_info, waveform_fig, spectrogram_figs = update_visualization(client_ip, duration)
 
             # Update location information
-            with location_placeholder.container():
-                st.markdown("### Location Data")
-                st.markdown(location_info)
+            location_placeholder.markdown("### Location Data")
+            location_placeholder.markdown(location_info)
+
+            # Update waveform plot
+            waveform_placeholder.plotly_chart(waveform_fig, use_container_width=True)
+
+            # Update spectrogram plot
+            spectrogram_placeholder.plotly_chart(spectrogram_figs, use_container_width=True)
 
             time.sleep(refresh_rate)
 
