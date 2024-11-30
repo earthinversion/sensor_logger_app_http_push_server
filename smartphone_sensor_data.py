@@ -242,10 +242,7 @@ def main():
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
             dominant_frequencies_str = (
-                f"**Dominant Frequencies (Hz):**\n"
-                f"- X-axis: {dominant_frequencies['X']:.2f} Hz\n"
-                f"- Y-axis: {dominant_frequencies['Y']:.2f} Hz\n"
-                f"- Z-axis: {dominant_frequencies['Z']:.2f} Hz"
+                f"**Dominant Frequencies (Hz):** X-axis: {dominant_frequencies['X']:.2f} Hz| Y-axis: {dominant_frequencies['Y']:.2f} Hz| Z-axis: {dominant_frequencies['Z']:.2f} Hz"
             )
 
             # Update location information
