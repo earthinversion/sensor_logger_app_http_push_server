@@ -87,13 +87,14 @@ def get_last_samples(client_ip=None, duration=10):
         return pd.DataFrame()
 
 def extract_dominant_frequency(Sxx, f):
-    """Extract the dominant frequency from the spectrogram."""
-    dominant_frequencies = []
-    for spectrum in Sxx.T:
-        # Find the frequency with the highest power for each time slice
-        max_power_index = np.argmax(spectrum)
-        dominant_frequencies.append(f[max_power_index])
-    return dominant_frequencies
+    """Extract the single dominant frequency from the spectrogram."""
+    # Sum power over all time slices to get total power per frequency
+    total_power = np.sum(Sxx, axis=1)
+    # Find the index of the frequency with the maximum total power
+    dominant_frequency_index = np.argmax(total_power)
+    # Return the frequency corresponding to the maximum power
+    return f[dominant_frequency_index]
+
 
 
 def plot_spectrogram(data, component, fs=50):
@@ -102,7 +103,7 @@ def plot_spectrogram(data, component, fs=50):
     Sxx = gaussian_filter(Sxx_rough, sigma=1)
 
     # Extract dominant frequencies
-    dominant_frequencies = extract_dominant_frequency(Sxx, f)
+    dominant_frequency = extract_dominant_frequency(Sxx, f)
 
     fig = go.Figure(data=go.Heatmap(
         x=t,
@@ -117,7 +118,7 @@ def plot_spectrogram(data, component, fs=50):
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
     )
-    return fig, dominant_frequencies
+    return fig, dominant_frequency
 
 
 
@@ -240,7 +241,12 @@ def main():
 
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
-            dominant_frequencies_str = f"{dominant_frequencies}"
+            dominant_frequencies_str = (
+                f"**Dominant Frequencies (Hz):**\n"
+                f"- X-axis: {dominant_frequencies['X']:.2f} Hz\n"
+                f"- Y-axis: {dominant_frequencies['Y']:.2f} Hz\n"
+                f"- Z-axis: {dominant_frequencies['Z']:.2f} Hz"
+            )
 
             # Update location information
             location_placeholder.markdown(location_info)
