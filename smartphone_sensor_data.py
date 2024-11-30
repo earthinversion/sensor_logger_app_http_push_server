@@ -10,6 +10,13 @@ import time
 from scipy.signal import spectrogram
 import numpy as np
 
+# Set page configuration
+st.set_page_config(
+    page_title="Data Visualization",
+    layout="wide",  # Increase the app's width
+    initial_sidebar_state="expanded"
+)
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -192,6 +199,7 @@ def main():
     waveform_placeholder = st.empty()
     spectrogram_placeholder = st.empty()
 
+
     try:
         while auto_refresh:
             location_info, waveform_fig, spectrogram_figs = update_visualization(client_ip, duration)
@@ -200,13 +208,15 @@ def main():
             location_placeholder.markdown("### Location Data")
             location_placeholder.markdown(location_info)
 
-            # Update waveform plot
-            with waveform_placeholder.container():
-                st.plotly_chart(waveform_fig, use_container_width=True)
+            # Use st.columns() dynamically for waveform and spectrogram
+            waveform_col, spectrogram_col = st.columns([1, 1])
 
-            # Update spectrogram plot
-            with spectrogram_placeholder.container():
-                st.plotly_chart(spectrogram_figs, use_container_width=True)
+            with waveform_col:
+                waveform_placeholder.plotly_chart(waveform_fig, use_container_width=True)
+
+            with spectrogram_col:
+                spectrogram_placeholder.plotly_chart(spectrogram_figs, use_container_width=True)
+
 
             time.sleep(refresh_rate)
 
