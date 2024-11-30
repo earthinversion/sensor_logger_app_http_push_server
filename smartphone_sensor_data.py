@@ -240,7 +240,7 @@ def main():
 
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
-            dominant_frequencies_str = ", ".join([f"{k}: {v:.2f} Hz" for k, v in dominant_frequencies.items()])
+            dominant_frequencies_str = f"{dominant_frequencies}"
 
             # Update location information
             location_placeholder.markdown(location_info)
