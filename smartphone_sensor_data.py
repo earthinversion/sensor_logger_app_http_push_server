@@ -95,7 +95,7 @@ def plot_spectrogram(data, fs=50):
     return spectrogram_fig
 
 # Function to visualize the data
-def update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, plot_key, duration):
+def update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, duration):
     # Fetch the location data
     location_data = get_location_data(client_ip)
     if location_data:
@@ -146,11 +146,15 @@ def update_visualization(client_ip, location_placeholder, waveform_placeholder, 
     fig.update_yaxes(title_text="Y", row=2, col=1)
     fig.update_yaxes(title_text="Z", row=3, col=1)
 
+    # Store the waveform in session state to prevent reloading
+    st.session_state['waveform_fig'] = fig
+
     with waveform_placeholder.container():
-        st.plotly_chart(fig, use_container_width=True, key=plot_key)
+        st.plotly_chart(fig, use_container_width=True)
 
     # Plot spectrogram for "x" component
     spectrogram_fig = plot_spectrogram(df["x"].values)
+    st.session_state['spectrogram_fig'] = spectrogram_fig
     with spectrogram_placeholder.container():
         st.plotly_chart(spectrogram_fig, use_container_width=True)
 
@@ -201,20 +205,23 @@ def main():
         step=0.1
     ) if auto_refresh else None
 
+    # Initialize session state for plots
+    if 'waveform_fig' not in st.session_state:
+        st.session_state['waveform_fig'] = None
+    if 'spectrogram_fig' not in st.session_state:
+        st.session_state['spectrogram_fig'] = None
+
     try:
-        iteration = 0  # To generate unique keys for each plot
         while auto_refresh:
-            plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
-            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, plot_key, duration)
+            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, duration)
             time.sleep(refresh_rate)
-            iteration += 1
     except Exception as e:
         logger.error(f"Error in visualization loop: {e}")
         st.error(f"An error occurred: {str(e)}")
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, "manual_plot", duration)
+            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, duration)
 
 if __name__ == "__main__":
     main()
