@@ -110,10 +110,7 @@ def update_visualization(client_ip, duration):
     # Fetch the location data
     location_data = get_location_data(client_ip)
     location_info = f"""
-    **Location Information:**
-    - **Latitude:** {location_data.get('latitude', 'N/A')}
-    - **Longitude:** {location_data.get('longitude', 'N/A')}
-    - **Altitude:** {location_data.get('altitude', 'N/A')} meters
+    **Location Information:** ({location_data.get('latitude', 'N/A')}, {location_data.get('longitude', 'N/A')}, {location_data.get('altitude', 'N/A')} meters)
     """ if location_data else "No location data available for this client."
 
     # Fetch sensor data
