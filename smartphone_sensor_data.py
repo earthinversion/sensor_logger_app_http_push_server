@@ -86,25 +86,39 @@ def get_last_samples(client_ip=None, duration=10):
         logger.error(f"Error fetching data: {e}")
         return pd.DataFrame()
 
+def extract_dominant_frequency(Sxx, f):
+    """Extract the dominant frequency from the spectrogram."""
+    dominant_frequencies = []
+    for spectrum in Sxx.T:
+        # Find the frequency with the highest power for each time slice
+        max_power_index = np.argmax(spectrum)
+        dominant_frequencies.append(f[max_power_index])
+    return dominant_frequencies
+
 
 def plot_spectrogram(data, component, fs=50):
     """Generate a spectrogram plot for a single component."""
     f, t, Sxx_rough = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
     Sxx = gaussian_filter(Sxx_rough, sigma=1)
+
+    # Extract dominant frequencies
+    dominant_frequencies = extract_dominant_frequency(Sxx, f)
+
     fig = go.Figure(data=go.Heatmap(
         x=t,
         y=f,
         z=10 * np.log10(Sxx),  # Convert power to dB
         colorscale='Jet',
-        zmin=-100,  # Minimum dB value
-        zmax=0,  # Maximum dB value
+        zmin=-80,  # Minimum dB value
+        zmax=20,  # Maximum dB value
     ))
     fig.update_layout(
         title=f"Spectrogram ({component}-axis)",
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
     )
-    return fig
+    return fig, dominant_frequencies
+
 
 
 def update_visualization(client_ip, duration):
@@ -144,9 +158,14 @@ def update_visualization(client_ip, duration):
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
-    spectrogram_figs.add_trace(plot_spectrogram(df["x"].values, "X").data[0], row=1, col=1)
-    spectrogram_figs.add_trace(plot_spectrogram(df["y"].values, "Y").data[0], row=2, col=1)
-    spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1)
+    dominant_frequencies = {}
+    spectrogram_fig, dominant_frequencies['X'] = plot_spectrogram(df["x"].values, "X")
+    spectrogram_figs.add_trace(spectrogram_fig.data[0], row=1, col=1)
+    spectrogram_fig, dominant_frequencies['Y'] = plot_spectrogram(df["y"].values, "Y")
+    spectrogram_figs.add_trace(spectrogram_fig.data[0], row=2, col=1)
+    spectrogram_fig, dominant_frequencies['Z'] = plot_spectrogram(df["z"].values, "Z")
+    spectrogram_figs.add_trace(spectrogram_fig.data[0], row=3, col=1)
+
 
     spectrogram_figs.update_layout(
         width=600,
@@ -154,7 +173,7 @@ def update_visualization(client_ip, duration):
         showlegend=False,
     )
 
-    return location_info, waveform_fig, spectrogram_figs
+    return location_info, waveform_fig, spectrogram_figs, dominant_frequencies
 
 
 def get_all_client_ip():
@@ -200,7 +219,13 @@ def main():
     ) if auto_refresh else None
 
     # Create placeholders
-    location_placeholder = st.empty()
+    # location_placeholder = st.empty()
+    colx, coly = st.columns(2)
+    with colx:
+        location_placeholder = st.empty()
+    with coly:
+        dominant_frequencies_placeholder = st.empty()
+
     col1, col2 = st.columns(2)
     with col1:
         waveform_placeholder = st.empty()
@@ -213,11 +238,15 @@ def main():
             # Generate a unique key suffix using the current timestamp
             timestamp_key = int(time.time() * 1000)
 
-            location_info, waveform_fig, spectrogram_figs = update_visualization(client_ip, duration)
+            location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
+
+            dominant_frequencies_str = ", ".join([f"{k}: {v:.2f} Hz" for k, v in dominant_frequencies.items()])
 
             # Update location information
-            location_placeholder.markdown("### Location Data")
             location_placeholder.markdown(location_info)
+
+            # Update dominant frequencies
+            dominant_frequencies_placeholder.markdown(dominant_frequencies_str)
 
             # Use st.columns() dynamically for waveform and spectrogram
             waveform_col, spectrogram_col = st.columns([1, 1])
