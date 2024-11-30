@@ -187,7 +187,7 @@ def main():
         step=0.1
     ) if auto_refresh else None
 
-    # Placeholders for location, waveform, and spectrogram
+    # Create placeholders
     location_placeholder = st.empty()
     waveform_placeholder, spectrogram_placeholder = st.columns(2)
 
@@ -200,10 +200,12 @@ def main():
             location_placeholder.markdown(location_info)
 
             # Update waveform plot
-            waveform_placeholder.plotly_chart(waveform_fig, use_container_width=True)
+            with waveform_placeholder:
+                st.plotly_chart(waveform_fig, use_container_width=True)
 
             # Update spectrogram plot
-            spectrogram_placeholder.plotly_chart(spectrogram_figs, use_container_width=True)
+            with spectrogram_placeholder:
+                st.plotly_chart(spectrogram_figs, use_container_width=True)
 
             time.sleep(refresh_rate)
 
