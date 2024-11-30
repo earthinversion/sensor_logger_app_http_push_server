@@ -215,10 +215,10 @@ def main():
             waveform_col, spectrogram_col = st.columns([1, 1])
 
             with waveform_col:
-                waveform_placeholder.plotly_chart(waveform_fig, use_container_width=True)
+                waveform_placeholder.plotly_chart(waveform_fig)
 
             with spectrogram_col:
-                spectrogram_placeholder.plotly_chart(spectrogram_figs, use_container_width=True)
+                spectrogram_placeholder.plotly_chart(spectrogram_figs)
 
 
             time.sleep(refresh_rate)
