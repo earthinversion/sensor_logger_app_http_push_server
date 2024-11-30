@@ -7,6 +7,7 @@ from datetime import datetime
 from pytz import timezone
 import logging
 import time
+from scipy.signal import spectrogram
 
 # Configure logging
 logging.basicConfig(
@@ -75,8 +76,25 @@ def get_last_samples(client_ip=None, duration=10):
         logger.error(f"Error fetching data: {e}")
         return pd.DataFrame()
 
+def plot_spectrogram(data, fs=50):
+    """Generate a spectrogram plot from the accelerometer data."""
+    f, t, Sxx = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
+    spectrogram_fig = go.Figure(data=go.Heatmap(
+        x=t,
+        y=f,
+        z=10 * np.log10(Sxx),  # Convert power to dB
+        colorscale='Jet'
+    ))
+    spectrogram_fig.update_layout(
+        title="Spectrogram (X-axis Data)",
+        xaxis_title="Time (s)",
+        yaxis_title="Frequency (Hz)",
+        height=400
+    )
+    return spectrogram_fig
+
 # Function to visualize the data
-def update_visualization(client_ip, location_placeholder, placeholder, plot_key, duration):
+def update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, plot_key, duration):
     # Fetch the location data
     location_data = get_location_data(client_ip)
     if location_data:
@@ -96,7 +114,7 @@ def update_visualization(client_ip, location_placeholder, placeholder, plot_key,
     df = get_last_samples(client_ip, duration)
     
     if df.empty:
-        placeholder.warning("No data available.")
+        waveform_placeholder.warning("No data available.")
         return
 
     fig = make_subplots(
@@ -127,8 +145,13 @@ def update_visualization(client_ip, location_placeholder, placeholder, plot_key,
     fig.update_yaxes(title_text="Y", row=2, col=1)
     fig.update_yaxes(title_text="Z", row=3, col=1)
 
-    with placeholder.container():
+    with waveform_placeholder.container():
         st.plotly_chart(fig, use_container_width=True, key=plot_key)
+
+    # Plot spectrogram for "x" component
+    spectrogram_fig = plot_spectrogram(df["x"].values)
+    with spectrogram_placeholder.container():
+        st.plotly_chart(spectrogram_fig, use_container_width=True)
 
 # Function to get all client_ip in the database
 def get_all_client_ip():
@@ -149,7 +172,8 @@ def main():
     
     # Create a placeholder for the plot
     location_placeholder = st.empty()
-    placeholder = st.empty()
+    waveform_placeholder = st.empty()
+    spectrogram_placeholder = st.empty()
 
     # Add a dropdown for selecting client_ip
     client_ip = st.sidebar.selectbox(
@@ -180,7 +204,7 @@ def main():
         iteration = 0  # To generate unique keys for each plot
         while auto_refresh:
             plot_key = f"plot_{iteration}"  # Generate a unique key for each iteration
-            update_visualization(client_ip, location_placeholder, placeholder, plot_key, duration)
+            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, plot_key, duration)
             time.sleep(refresh_rate)
             iteration += 1
     except Exception as e:
@@ -189,7 +213,7 @@ def main():
 
     if not auto_refresh:
         if st.sidebar.button("Refresh Now"):
-            update_visualization(client_ip, location_placeholder, placeholder, "manual_plot", duration)
+            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, "manual_plot", duration)
 
 if __name__ == "__main__":
     main()
