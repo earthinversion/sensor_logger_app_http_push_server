@@ -23,6 +23,7 @@ pip install fastapi uvicorn
 pip install plotly
 pip install streamlit
 pip install sqlalchemy
+pip install scipy # for plotting spectrogram
 
 sudo yum groupinstall "Development Tools"
 sudo yum install -y postgresql-devel python3-devel
