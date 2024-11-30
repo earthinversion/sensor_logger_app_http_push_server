@@ -57,8 +57,8 @@ def get_location_data(client_ip):
         logger.error(f"Error fetching location data for client_ip {client_ip}: {e}")
         return {}
 
-# Function to fetch the last 'duration' seconds of samples from the database
 def get_last_samples(client_ip=None, duration=10):
+    """Fetch the last 'duration' seconds of accelerometer data."""
     if client_ip is None:
         return pd.DataFrame()
 
@@ -94,48 +94,32 @@ def plot_spectrogram(data, fs=50):
     )
     return spectrogram_fig
 
-# Function to visualize the data
-def update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, duration):
+def update_visualization(client_ip, duration):
+    """Update waveform and spectrogram visualizations."""
     # Fetch the location data
     location_data = get_location_data(client_ip)
-    if location_data:
-        location_placeholder.markdown(
-            f"""
-            **Location Information:**
-            - **Latitude:** {location_data.get('latitude', 'N/A')}
-            - **Longitude:** {location_data.get('longitude', 'N/A')}
-            - **Altitude:** {location_data.get('altitude', 'N/A')} meters
-            """
-        )
-    else:
-        location_placeholder.warning("No location data available for this client.")
-
+    location_info = f"""
+    **Location Information:**
+    - **Latitude:** {location_data.get('latitude', 'N/A')}
+    - **Longitude:** {location_data.get('longitude', 'N/A')}
+    - **Altitude:** {location_data.get('altitude', 'N/A')} meters
+    """ if location_data else "No location data available for this client."
 
     # Fetch sensor data and create plots
     df = get_last_samples(client_ip, duration)
-    
     if df.empty:
-        waveform_placeholder.warning("No data available.")
-        return
+        return location_info, None, None
 
+    # Plot waveforms
     fig = make_subplots(
         rows=3, cols=1,
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
 
-    fig.add_trace(
-        go.Scatter(x=df["timestamp"], y=df["x"], mode="lines"),
-        row=1, col=1
-    )
-    fig.add_trace(
-        go.Scatter(x=df["timestamp"], y=df["y"], mode="lines"),
-        row=2, col=1
-    )
-    fig.add_trace(
-        go.Scatter(x=df["timestamp"], y=df["z"], mode="lines"),
-        row=3, col=1
-    )
+    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["x"], mode="lines"), row=1, col=1)
+    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["y"], mode="lines"), row=2, col=1)
+    fig.add_trace(go.Scatter(x=df["timestamp"], y=df["z"], mode="lines"), row=3, col=1)
 
     fig.update_layout(
         height=600,
@@ -146,20 +130,13 @@ def update_visualization(client_ip, location_placeholder, waveform_placeholder, 
     fig.update_yaxes(title_text="Y", row=2, col=1)
     fig.update_yaxes(title_text="Z", row=3, col=1)
 
-    # Store the waveform in session state to prevent reloading
-    st.session_state['waveform_fig'] = fig
-
-    with waveform_placeholder.container():
-        st.plotly_chart(fig, use_container_width=True)
-
     # Plot spectrogram for "x" component
     spectrogram_fig = plot_spectrogram(df["x"].values)
-    st.session_state['spectrogram_fig'] = spectrogram_fig
-    with spectrogram_placeholder.container():
-        st.plotly_chart(spectrogram_fig, use_container_width=True)
 
-# Function to get all client_ip in the database
+    return location_info, fig, spectrogram_fig
+
 def get_all_client_ip():
+    """Fetch all unique client_ip values from the database."""
     try:
         query = f"""
             SELECT DISTINCT client_ip
@@ -168,18 +145,12 @@ def get_all_client_ip():
         df = pd.read_sql_query(query, engine)
         return df['client_ip'].tolist()
     except Exception as e:
-        logger.error(f"Error fetching data: {e}")
+        logger.error(f"Error fetching client_ip values: {e}")
         return []
 
-# Main function
 def main():
     st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
     
-    # Create a placeholder for the plot
-    location_placeholder = st.empty()
-    waveform_placeholder = st.empty()
-    spectrogram_placeholder = st.empty()
-
     # Add a dropdown for selecting client_ip
     client_ip = st.sidebar.selectbox(
         "Select Client IP",
@@ -205,23 +176,32 @@ def main():
         step=0.1
     ) if auto_refresh else None
 
-    # Initialize session state for plots
-    if 'waveform_fig' not in st.session_state:
-        st.session_state['waveform_fig'] = None
-    if 'spectrogram_fig' not in st.session_state:
-        st.session_state['spectrogram_fig'] = None
+    # Visualize data
+    location_col, waveform_col = st.columns([1, 2])
 
     try:
         while auto_refresh:
-            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, duration)
-            time.sleep(refresh_rate)
-    except Exception as e:
-        logger.error(f"Error in visualization loop: {e}")
-        st.error(f"An error occurred: {str(e)}")
+            with location_col:
+                st.markdown(f"### {sensor_data_to_store.capitalize()} - Location Data")
+            location_info, waveform_fig, spectrogram_fig = update_visualization(client_ip, duration)
 
-    if not auto_refresh:
-        if st.sidebar.button("Refresh Now"):
-            update_visualization(client_ip, location_placeholder, waveform_placeholder, spectrogram_placeholder, duration)
+            with location_col:
+                st.markdown(location_info)
+
+            with waveform_col:
+                if waveform_fig:
+                    st.plotly_chart(waveform_fig, use_container_width=True)
+
+            st.markdown("---")
+            if spectrogram_fig:
+                st.markdown("### Spectrogram")
+                st.plotly_chart(spectrogram_fig, use_container_width=True)
+
+            time.sleep(refresh_rate)
+
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        st.error("An error occurred.")
 
 if __name__ == "__main__":
     main()
