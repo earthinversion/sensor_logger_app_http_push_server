@@ -199,8 +199,11 @@ def main():
 
     # Create placeholders
     location_placeholder = st.empty()
-    waveform_placeholder = st.empty()
-    spectrogram_placeholder = st.empty()
+    col1, col2 = st.columns(2)
+    with col1:
+        waveform_placeholder = st.empty()
+    with col2:
+        spectrogram_placeholder = st.empty()
 
 
     try:
