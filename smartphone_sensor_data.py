@@ -111,7 +111,7 @@ def plot_spectrogram(data, component, fs=50):
         z=10 * np.log10(Sxx),  # Convert power to dB
         colorscale='Jet',
         zmin=-80,  # Minimum dB value
-        zmax=20,  # Maximum dB value
+        zmax=10,  # Maximum dB value
     ))
     fig.update_layout(
         title=f"Spectrogram ({component}-axis)",
