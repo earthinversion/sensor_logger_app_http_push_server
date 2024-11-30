@@ -210,6 +210,9 @@ def main():
 
     try:
         while auto_refresh:
+            # Generate a unique key suffix using the current timestamp
+            timestamp_key = int(time.time() * 1000)
+
             location_info, waveform_fig, spectrogram_figs = update_visualization(client_ip, duration)
 
             # Update location information
@@ -220,11 +223,10 @@ def main():
             waveform_col, spectrogram_col = st.columns([1, 1])
 
             with waveform_col:
-                waveform_placeholder.plotly_chart(waveform_fig, key=f"waveform_{client_ip}")
+                waveform_placeholder.plotly_chart(waveform_fig, key=f"waveform_{client_ip}_{timestamp_key}")
 
             with spectrogram_col:
-                spectrogram_placeholder.plotly_chart(spectrogram_figs, key=f"spectrogram_{client_ip}")
-
+                spectrogram_placeholder.plotly_chart(spectrogram_figs, key=f"spectrogram_{client_ip}_{timestamp_key}")
 
             time.sleep(refresh_rate)
 
