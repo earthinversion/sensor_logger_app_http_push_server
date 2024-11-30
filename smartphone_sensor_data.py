@@ -37,7 +37,7 @@ engine = create_engine(DB_URI)
 sensor_data_to_store = 'accelerometer'  # 'gravity' or 'accelerometer'
 
 # Specify the local time zone
-LOCAL_TIMEZONE = timezone("America/Los_Angeles")  
+LOCAL_TIMEZONE = timezone("America/Los_Angeles")
 
 def get_location_data(client_ip):
     """Fetch the most recent location data for a given client_ip."""
@@ -176,26 +176,29 @@ def main():
         step=0.1
     ) if auto_refresh else None
 
-    # Visualize data
-    location_col, waveform_col = st.columns([1, 2])
+    # Create placeholders
+    location_placeholder = st.empty()
+    waveform_placeholder = st.empty()
+    spectrogram_placeholder = st.empty()
 
     try:
         while auto_refresh:
-            with location_col:
-                st.markdown(f"### {sensor_data_to_store.capitalize()} - Location Data")
             location_info, waveform_fig, spectrogram_fig = update_visualization(client_ip, duration)
 
-            with location_col:
+            # Update placeholders
+            with location_placeholder.container():
+                st.markdown("### Location Data")
                 st.markdown(location_info)
 
-            with waveform_col:
+            with waveform_placeholder.container():
                 if waveform_fig:
+                    st.markdown("### Waveform")
                     st.plotly_chart(waveform_fig, use_container_width=True)
 
-            st.markdown("---")
-            if spectrogram_fig:
-                st.markdown("### Spectrogram")
-                st.plotly_chart(spectrogram_fig, use_container_width=True)
+            with spectrogram_placeholder.container():
+                if spectrogram_fig:
+                    st.markdown("### Spectrogram")
+                    st.plotly_chart(spectrogram_fig, use_container_width=True)
 
             time.sleep(refresh_rate)
 
