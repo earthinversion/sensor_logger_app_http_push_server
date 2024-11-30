@@ -128,7 +128,7 @@ def update_visualization(client_ip, duration):
     waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["y"], mode="lines", name="Y"), row=2, col=1)
     waveform_fig.add_trace(go.Scatter(x=df["timestamp"], y=df["z"], mode="lines", name="Z"), row=3, col=1)
     waveform_fig.update_layout(
-        width=300,
+        width=550,
         margin=dict(l=40, r=40, t=40, b=40),
         showlegend=False,
     )
@@ -147,7 +147,7 @@ def update_visualization(client_ip, duration):
     spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1)
 
     spectrogram_figs.update_layout(
-        width=300,
+        width=550,
         margin=dict(l=40, r=40, t=40, b=40),
         showlegend=False,
     )
