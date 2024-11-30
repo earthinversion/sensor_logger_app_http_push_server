@@ -9,10 +9,11 @@ import logging
 import time
 from scipy.signal import spectrogram
 import numpy as np
+from scipy.ndimage import gaussian_filter
 
 # Set page configuration
 st.set_page_config(
-    page_title="Data Visualization",
+    page_title="San Diego Shake Tests",
     layout="wide",  # Increase the app's width
     initial_sidebar_state="expanded"
 )
@@ -89,18 +90,20 @@ def get_last_samples(client_ip=None, duration=10):
 
 def plot_spectrogram(data, component, fs=50):
     """Generate a spectrogram plot for a single component."""
-    f, t, Sxx = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
+    f, t, Sxx_rough = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
+    Sxx = gaussian_filter(Sxx_rough, sigma=1)
     fig = go.Figure(data=go.Heatmap(
         x=t,
         y=f,
         z=10 * np.log10(Sxx),  # Convert power to dB
-        colorscale='Jet'
+        colorscale='Jet',
+        zmin=-100,  # Minimum dB value
+        zmax=0,  # Maximum dB value
     ))
     fig.update_layout(
         title=f"Spectrogram ({component}-axis)",
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
-        height=600,  # Match waveform plot height
     )
     return fig
 
