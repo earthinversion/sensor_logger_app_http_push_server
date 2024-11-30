@@ -229,7 +229,7 @@ def main():
             time.sleep(refresh_rate)
 
     except Exception as e:
-        # logger.error(f"Error: {e}")
+        logger.exception(f"Error: {e}")
         st.error("Something went wrong! Please check the logs for more information.")
 
 
