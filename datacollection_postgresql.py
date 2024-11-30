@@ -64,6 +64,32 @@ async def create_database_if_not_exists():
     finally:
         await conn.close()
 
+
+async def cleanup_old_data():
+    """Delete data older than 24 hours from the database."""
+    while True:
+        try:
+            async with app.state.db_pool.acquire() as conn:
+                for sensor_data_to_store in sensor_data_list_to_store:
+                    query = f"""
+                        DELETE FROM {sensor_data_to_store}_data 
+                        WHERE timestamp < NOW() - INTERVAL '24 HOURS';
+                    """
+                    await conn.execute(query)
+                    logger.info(f"Old data deleted from {sensor_data_to_store}_data table.")
+
+                location_cleanup_query = """
+                    DELETE FROM location_data 
+                    WHERE timestamp < NOW() - INTERVAL '24 HOURS';
+                """
+                await conn.execute(location_cleanup_query)
+                logger.info("Old data deleted from location_data table.")
+        except Exception as e:
+            logger.error(f"Error during cleanup: {e}")
+        
+        # Sleep for an hour before the next cleanup
+        await asyncio.sleep(3600)
+
 # Create database pool
 @app.on_event("startup")
 async def startup():
@@ -81,6 +107,9 @@ async def startup():
         await init_database(sensor_data_to_store)
 
     await init_location_table() # Initialize the location table
+
+    # Start the cleanup task
+    asyncio.create_task(cleanup_old_data())
 
 @app.on_event("shutdown")
 async def shutdown():
