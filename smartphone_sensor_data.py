@@ -144,9 +144,9 @@ def update_visualization(client_ip, duration):
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
-    spectrogram_figs.add_trace(plot_spectrogram(df["x"].values, "X").data[0], row=1, col=1, key="spectrogram_x")
-    spectrogram_figs.add_trace(plot_spectrogram(df["y"].values, "Y").data[0], row=2, col=1, key="spectrogram_y")
-    spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1, key="spectrogram_z")
+    spectrogram_figs.add_trace(plot_spectrogram(df["x"].values, "X").data[0], row=1, col=1)
+    spectrogram_figs.add_trace(plot_spectrogram(df["y"].values, "Y").data[0], row=2, col=1)
+    spectrogram_figs.add_trace(plot_spectrogram(df["z"].values, "Z").data[0], row=3, col=1)
 
     spectrogram_figs.update_layout(
         width=600,
