@@ -87,14 +87,13 @@ def get_last_samples(client_ip=None, duration=10):
         logger.error(f"Error fetching data: {e}")
         return pd.DataFrame()
 
-def extract_dominant_frequency(Sxx, f):
+def extract_dominant_frequency(Sxx, f, power_threshold=-30):
     """Extract the single dominant frequency from the spectrogram if its power is above a threshold."""
     # Sum power over all time slices to get total power per frequency
     total_power = np.sum(Sxx, axis=1)
     total_power_db = 10 * np.log10(total_power)
     # print(total_power_db)
     # Define a power threshold
-    power_threshold = -30  # dB  
     # Find the index of the frequency with the maximum total power
     dominant_frequency_index = np.argmax(total_power_db)
     # Check if the maximum power is above the threshold
@@ -106,13 +105,13 @@ def extract_dominant_frequency(Sxx, f):
         return 0.0
 
 
-def plot_spectrogram(data, component, fs=50):
+def plot_spectrogram(data, component, fs=50, threshold=-30):
     """Generate a spectrogram plot for a single component."""
     f, t, Sxx_rough = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
     Sxx = gaussian_filter(Sxx_rough, sigma=1)
 
     # Extract dominant frequencies
-    dominant_frequency = extract_dominant_frequency(Sxx, f)
+    dominant_frequency = extract_dominant_frequency(Sxx, f, power_threshold=threshold)
 
     fig = go.Figure(data=go.Heatmap(
         x=t,
@@ -131,7 +130,7 @@ def plot_spectrogram(data, component, fs=50):
 
 
 
-def update_visualization(client_ip, duration):
+def update_visualization(client_ip, duration, power_threshold=-10):
     """Update waveform and spectrogram visualizations."""
     # Fetch the location data
     location_data = get_location_data(client_ip)
@@ -169,11 +168,11 @@ def update_visualization(client_ip, duration):
         vertical_spacing=0.02,
     )
     dominant_frequencies = {}
-    spectrogram_fig, dominant_frequencies['X'] = plot_spectrogram(df["x"].values, "X")
+    spectrogram_fig, dominant_frequencies['X'] = plot_spectrogram(df["x"].values, "X", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=1, col=1)
-    spectrogram_fig, dominant_frequencies['Y'] = plot_spectrogram(df["y"].values, "Y")
+    spectrogram_fig, dominant_frequencies['Y'] = plot_spectrogram(df["y"].values, "Y", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=2, col=1)
-    spectrogram_fig, dominant_frequencies['Z'] = plot_spectrogram(df["z"].values, "Z")
+    spectrogram_fig, dominant_frequencies['Z'] = plot_spectrogram(df["z"].values, "Z", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=3, col=1)
 
     spectrogram_figs.update_layout(
@@ -259,10 +258,20 @@ def main():
     refresh_rate = st.sidebar.slider(
         "Refresh Rate (seconds)",
         min_value=0.5,
-        max_value=60.0,
+        max_value=10.0,
         value=1.0,
         step=0.5
     )
+
+    # A slider for the dominant frequency threshold
+    dominant_frequency_threshold = st.sidebar.slider(
+        "Frequency Thresh (dB)",
+        min_value=-70,
+        max_value=0,
+        value=-30,
+        step=5
+    )
+
 
     # Create placeholders
     colx, coly = st.columns(2)
@@ -283,7 +292,7 @@ def main():
             # Generate a unique key suffix using the current timestamp
             timestamp_key = int(time.time() * 1000)
 
-            location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
+            location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration, dominant_frequency_threshold)
 
             dominant_frequencies_str = (
                 f"**Dominant Frequencies (Hz):** X-comp: {format_dominant_frequency(dominant_frequencies['X'])} | "
