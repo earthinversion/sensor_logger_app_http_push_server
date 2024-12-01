@@ -10,6 +10,7 @@ import time
 from scipy.signal import spectrogram
 import numpy as np
 from scipy.ndimage import gaussian_filter
+from client_tags import get_tags, init_tag_db, add_or_update_tag
 
 # Set page configuration
 st.set_page_config(
@@ -185,7 +186,15 @@ def get_all_client_ip():
             FROM {sensor_data_to_store}_data
         """
         df = pd.read_sql_query(query, engine)
-        return df['client_ip'].tolist()
+        client_ips = df['client_ip'].tolist()
+
+        # Load existing tags from SQLite
+        tags = get_tags()
+
+        # Combine client IPs with tags for display
+        tagged_ips = [f"{ip} ({tags.get(ip, 'No Tag')})" for ip in client_ips]
+        return tagged_ips, client_ips, tags
+    
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
         return []
@@ -193,12 +202,31 @@ def get_all_client_ip():
 
 def main():
     st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
+
+    # Initialize the SQLite database
+    init_tag_db()
+
+    # Get client IPs and tags
+    tagged_ips, client_ips, tags = get_all_client_ip()
     
     # Add a dropdown for selecting client_ip
-    client_ip = st.sidebar.selectbox(
+    client_ip_with_tag = st.sidebar.selectbox(
         "Select Client IP",
-        options=get_all_client_ip()
+        options=tagged_ips
     )
+
+    # Extract the raw client_ip from the selection
+    client_ip = client_ip_with_tag.split(" ")[0]
+
+    # Display current tag and allow modification
+    st.sidebar.markdown("### Manage Tag for Selected Client")
+    current_tag = tags.get(client_ip, "")
+    new_tag = st.sidebar.text_input("Tag", value=current_tag)
+
+    if st.sidebar.button("Save Tag"):
+        add_or_update_tag(client_ip, new_tag)
+        st.sidebar.success(f"Tag for {client_ip} updated to '{new_tag}'.")
+
 
     # Add a slider for waveform duration
     duration = st.sidebar.slider(
@@ -220,7 +248,6 @@ def main():
     ) if auto_refresh else None
 
     # Create placeholders
-    # location_placeholder = st.empty()
     colx, coly = st.columns(2)
     with colx:
         location_placeholder = st.empty()
@@ -242,7 +269,9 @@ def main():
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
             dominant_frequencies_str = (
-                f"**Dominant Frequencies (Hz):** X-axis: {dominant_frequencies['X']:.2f} Hz| Y-axis: {dominant_frequencies['Y']:.2f} Hz| Z-axis: {dominant_frequencies['Z']:.2f} Hz"
+                f"**Dominant Frequencies (Hz):** X-axis: {dominant_frequencies['X']:.2f} Hz | "
+                f"Y-axis: {dominant_frequencies['Y']:.2f} Hz | "
+                f"Z-axis: {dominant_frequencies['Z']:.2f} Hz"
             )
 
             # Update location information
