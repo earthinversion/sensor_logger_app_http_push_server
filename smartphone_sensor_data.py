@@ -202,7 +202,7 @@ def update_visualization(client_ip, duration, power_threshold=-10):
     # Fetch sensor data
     df = get_last_samples(client_ip, duration)
     if df.empty:
-        return location_info, None, None
+        return location_info, None, None, None, None
 
     # Create waveform plot
     waveform_fig = make_subplots(

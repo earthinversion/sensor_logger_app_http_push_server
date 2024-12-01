@@ -41,15 +41,6 @@ git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.g
 
 python datacollection_postgresql.py #to collect smartphone data to postgresql server asynchronously
 streamlit run smartphone_sensor_data.py --server.port 5000
-
-# ## install redis from source
-# sudo yum install -y gcc jemalloc-devel
-# curl -O http://download.redis.io/redis-stable.tar.gz
-# tar xzvf redis-stable.tar.gz
-# cd redis-stable
-# make
-# sudo make install
-
 ```
 
 
@@ -75,3 +66,14 @@ streamlit run smartphone_sensor_data.py --server.port 5000
 
 ## Access the app
 
+
+## Extra
+```bash
+## install redis from source
+sudo yum install -y gcc jemalloc-devel
+curl -O http://download.redis.io/redis-stable.tar.gz
+tar xzvf redis-stable.tar.gz
+cd redis-stable
+make
+sudo make install
+```
