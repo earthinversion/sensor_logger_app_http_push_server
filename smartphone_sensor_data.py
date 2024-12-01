@@ -315,7 +315,7 @@ def main():
     current_tag = tags.get(client_ip, "")
 
     # st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
-    st.header(f"MyShake Experiment ({client_ip} [{current_tag}]: {sensor_data_to_store.capitalize()})")
+    st.subheader(f"MyShake Experiment ({client_ip} [{current_tag}]: {sensor_data_to_store.capitalize()})")
 
 
     new_tag = st.sidebar.text_input("Tag", value=current_tag)
