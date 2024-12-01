@@ -104,6 +104,53 @@ def extract_dominant_frequency(Sxx, f, power_threshold=-30):
         # Return None if no dominant frequency meets the threshold
         return 0.0
 
+def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
+    """
+    Compute the dominant frequency using the H/V (Horizontal-to-Vertical) spectral ratio.
+    
+    Parameters:
+        Sxx_f_dict: dict
+            A dictionary containing spectrogram data and frequencies for each component ('X', 'Y', 'Z').
+            Example: {'X': (Sxx_x, f_x), 'Y': (Sxx_y, f_y), 'Z': (Sxx_z, f_z)}
+        power_threshold: float
+            Minimum power in dB to consider a frequency as dominant.
+
+    Returns:
+        float: Dominant frequency based on the H/V ratio.
+    """
+    try:
+        # Extract the spectrogram data and frequency arrays for X, Y, and Z
+        Sxx_x, f_x = Sxx_f_dict['X']
+        Sxx_y, f_y = Sxx_f_dict['Y']
+        Sxx_z, f_z = Sxx_f_dict['Z']
+
+        # Convert power spectra to dB
+        Sxx_x_db = 10 * np.log10(np.sum(Sxx_x, axis=1))
+        Sxx_y_db = 10 * np.log10(np.sum(Sxx_y, axis=1))
+        Sxx_z_db = 10 * np.log10(np.sum(Sxx_z, axis=1))
+
+        # Calculate average horizontal spectrum in dB (X and Y components)
+        Sxx_h_db = (Sxx_x_db + Sxx_y_db) / 2
+
+        # Ensure frequencies match across components
+        if not np.array_equal(f_x, f_y) or not np.array_equal(f_x, f_z):
+            raise ValueError("Frequency arrays for X, Y, and Z components must match.")
+
+        # Compute the H/V ratio in dB
+        hv_ratio_db = Sxx_h_db - Sxx_z_db #based on logaritmic property where log(a/b) = log(a) - log(b)
+
+        # Find the index of the frequency with the maximum H/V ratio above the power threshold
+        valid_indices = np.where(hv_ratio_db > power_threshold)[0]
+        if len(valid_indices) == 0:
+            return 0.0  # Return 0 if no frequency meets the threshold
+
+        dominant_index = valid_indices[np.argmax(hv_ratio_db[valid_indices])]
+        return f_x[dominant_index]  # Return the dominant frequency
+    except Exception as e:
+        logger.error(f"Error in extract_h_over_v_dominant_frequency: {e}")
+        return 0.0
+
+
 
 def plot_spectrogram(data, component, fs=50, threshold=-30):
     """Generate a spectrogram plot for a single component."""
@@ -113,10 +160,11 @@ def plot_spectrogram(data, component, fs=50, threshold=-30):
     # Extract dominant frequencies
     dominant_frequency = extract_dominant_frequency(Sxx, f, power_threshold=threshold)
 
+    Sxx_db = 10 * np.log10(Sxx)  # Convert power to dB
     fig = go.Figure(data=go.Heatmap(
         x=t,
         y=f,
-        z=10 * np.log10(Sxx),  # Convert power to dB
+        z=Sxx_db,  # Convert power to dB
         colorscale='Jet',
         zmin=-80,  # Minimum dB value
         zmax=10,  # Maximum dB value
@@ -126,7 +174,7 @@ def plot_spectrogram(data, component, fs=50, threshold=-30):
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
     )
-    return fig, dominant_frequency
+    return fig, dominant_frequency, Sxx_db, f
 
 
 
@@ -168,12 +216,23 @@ def update_visualization(client_ip, duration, power_threshold=-10):
         vertical_spacing=0.02,
     )
     dominant_frequencies = {}
-    spectrogram_fig, dominant_frequencies['X'] = plot_spectrogram(df["x"].values, "X", threshold=power_threshold)
+    spectrogram_fig, dominant_frequencies['X'], Sxx_x, f_x = plot_spectrogram(df["x"].values, "X", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=1, col=1)
-    spectrogram_fig, dominant_frequencies['Y'] = plot_spectrogram(df["y"].values, "Y", threshold=power_threshold)
+    spectrogram_fig, dominant_frequencies['Y'], Sxx_y, f_y = plot_spectrogram(df["y"].values, "Y", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=2, col=1)
-    spectrogram_fig, dominant_frequencies['Z'] = plot_spectrogram(df["z"].values, "Z", threshold=power_threshold)
+    spectrogram_fig, dominant_frequencies['Z'], Sxx_z, f_z = plot_spectrogram(df["z"].values, "Z", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=3, col=1)
+
+    Sxx_f_dict = {
+        'X': (Sxx_x, f_x),
+        'Y': (Sxx_y, f_y),
+        'Z': (Sxx_z, f_z)
+    }
+
+    hv_dominant_frequency = extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold)
+
+    print(f"hv_dominant_frequency: {hv_dominant_frequency}")
+
 
     spectrogram_figs.update_layout(
         width=600,
@@ -268,7 +327,7 @@ def main():
         "Frequency Thresh (dB)",
         min_value=-70,
         max_value=0,
-        value=-30,
+        value=-40,
         step=5
     )
 
