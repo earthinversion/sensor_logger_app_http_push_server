@@ -91,12 +91,14 @@ def extract_dominant_frequency(Sxx, f):
     """Extract the single dominant frequency from the spectrogram if its power is above a threshold."""
     # Sum power over all time slices to get total power per frequency
     total_power = np.sum(Sxx, axis=1)
+    total_power_db = 10 * np.log10(total_power)
+    print(total_power_db)
     # Define a power threshold
     power_threshold = -40  # dB  
     # Find the index of the frequency with the maximum total power
-    dominant_frequency_index = np.argmax(total_power)
+    dominant_frequency_index = np.argmax(total_power_db)
     # Check if the maximum power is above the threshold
-    if total_power[dominant_frequency_index] > power_threshold:
+    if total_power_db[dominant_frequency_index] > power_threshold:
         # Return the frequency corresponding to the maximum power
         return f[dominant_frequency_index]
     else:
