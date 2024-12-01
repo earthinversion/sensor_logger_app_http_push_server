@@ -294,8 +294,6 @@ def format_dominant_frequency(dominant_frequency):
     return f"{dominant_frequency:.2f} Hz"
 
 def main():
-    # st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
-    st.header(f"MyShake Experiment ({sensor_data_to_store.capitalize()})")
 
     # Initialize the SQLite database
     init_tag_db()
@@ -312,8 +310,14 @@ def main():
     # Extract the raw client_ip from the selection
     client_ip = client_ip_with_tag.split(" ")[0]
 
+
     # Display current tag and allow modification
     current_tag = tags.get(client_ip, "")
+
+    # st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
+    st.header(f"MyShake Experiment ({client_ip} [{current_tag}]: {sensor_data_to_store.capitalize()})")
+
+
     new_tag = st.sidebar.text_input("Tag", value=current_tag)
 
     if st.sidebar.button("Save Tag"):
