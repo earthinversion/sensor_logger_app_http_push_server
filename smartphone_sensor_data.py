@@ -207,6 +207,11 @@ def get_all_client_ip():
         logger.error(f"Error fetching client_ip values: {e}")
         return []
 
+def format_dominant_frequency(dominant_frequency):
+    """Format the dominant frequency string."""
+    if dominant_frequency == 0.0:
+        return "N/A"
+    return f"{dominant_frequency:.2f} Hz"
 
 def main():
     st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
@@ -276,9 +281,9 @@ def main():
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
             dominant_frequencies_str = (
-                f"**Dominant Frequencies (Hz):** X-comp: {dominant_frequencies['X']:.2f} Hz | "
-                f"Y-comp: {dominant_frequencies['Y']:.2f} Hz | "
-                f"Z-comp: {dominant_frequencies['Z']:.2f} Hz"
+                f"**Dominant Frequencies (Hz):** X-comp: {format_dominant_frequency(dominant_frequencies['X'])} | "
+                f"Y-comp: {format_dominant_frequency(dominant_frequencies['Y'])} | "
+                f"Z-comp: {format_dominant_frequency(dominant_frequencies['Z'])}"
             )
 
             # Update location information
