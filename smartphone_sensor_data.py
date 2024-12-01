@@ -199,10 +199,15 @@ def update_visualization(client_ip, duration, power_threshold=-10):
     **Location Information:** ({location_data.get('latitude', 'N/A')}, {location_data.get('longitude', 'N/A')}, {location_data.get('altitude', 'N/A')} meters)
     """ if location_data else "No location data available for this client."
 
+    dominant_frequencies = {
+        'X': 0.0,
+        'Y': 0.0,
+        'Z': 0.0
+    }
     # Fetch sensor data
     df = get_last_samples(client_ip, duration)
     if df.empty:
-        return location_info, None, None, None, None
+        return location_info, None, None, dominant_frequencies, 0.0
 
     # Create waveform plot
     waveform_fig = make_subplots(
@@ -228,7 +233,7 @@ def update_visualization(client_ip, duration, power_threshold=-10):
         shared_xaxes=True,
         vertical_spacing=0.02,
     )
-    dominant_frequencies = {}
+    
     spectrogram_fig, dominant_frequencies['X'], Sxx_x, f_x = plot_spectrogram(df["x"].values, "X", threshold=power_threshold)
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=1, col=1)
     spectrogram_fig, dominant_frequencies['Y'], Sxx_y, f_y = plot_spectrogram(df["y"].values, "Y", threshold=power_threshold)
