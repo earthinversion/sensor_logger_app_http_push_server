@@ -103,7 +103,7 @@ def extract_dominant_frequency(Sxx, f):
         return f[dominant_frequency_index]
     else:
         # Return None if no dominant frequency meets the threshold
-        return None
+        return 0.0
 
 
 def plot_spectrogram(data, component, fs=50):
