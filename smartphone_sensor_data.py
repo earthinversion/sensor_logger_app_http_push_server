@@ -107,7 +107,7 @@ def extract_dominant_frequency(Sxx, f, power_threshold=-30):
 def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
     """
     Compute the dominant frequency using the H/V (Horizontal-to-Vertical) spectral ratio.
-    
+
     Parameters:
         Sxx_f_dict: dict
             A dictionary containing spectrogram data and frequencies for each component ('X', 'Y', 'Z').
@@ -124,11 +124,16 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
         Sxx_y, f_y = Sxx_f_dict['Y']
         Sxx_z, f_z = Sxx_f_dict['Z']
 
-        # Convert power spectra to dB
+        # Add epsilon directly to replace zeros or negative values in spectrogram data
         epsilon = 1e-10
-        Sxx_x_db = 10 * np.log10(np.sum(Sxx_x, axis=1) + epsilon)
-        Sxx_y_db = 10 * np.log10(np.sum(Sxx_y, axis=1) + epsilon)
-        Sxx_z_db = 10 * np.log10(np.sum(Sxx_z, axis=1) + epsilon)
+        Sxx_x = np.maximum(Sxx_x, epsilon)
+        Sxx_y = np.maximum(Sxx_y, epsilon)
+        Sxx_z = np.maximum(Sxx_z, epsilon)
+
+        # Compute the power spectra in dB
+        Sxx_x_db = 10 * np.log10(np.sum(Sxx_x, axis=1))
+        Sxx_y_db = 10 * np.log10(np.sum(Sxx_y, axis=1))
+        Sxx_z_db = 10 * np.log10(np.sum(Sxx_z, axis=1))
 
         # Calculate average horizontal spectrum in dB (X and Y components)
         Sxx_h_db = (Sxx_x_db + Sxx_y_db) / 2
@@ -138,7 +143,7 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
             raise ValueError("Frequency arrays for X, Y, and Z components must match.")
 
         # Compute the H/V ratio in dB
-        hv_ratio_db = Sxx_h_db - Sxx_z_db #based on logaritmic property where log(a/b) = log(a) - log(b)
+        hv_ratio_db = Sxx_h_db - Sxx_z_db
 
         # Find the index of the frequency with the maximum H/V ratio above the power threshold
         valid_indices = np.where(hv_ratio_db > power_threshold)[0]
@@ -150,7 +155,6 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
     except Exception as e:
         logger.error(f"Error in extract_h_over_v_dominant_frequency: {e}")
         return 0.0
-
 
 
 def plot_spectrogram(data, component, fs=50, threshold=-30):
