@@ -176,12 +176,17 @@ def update_visualization(client_ip, duration):
     spectrogram_fig, dominant_frequencies['Z'] = plot_spectrogram(df["z"].values, "Z")
     spectrogram_figs.add_trace(spectrogram_fig.data[0], row=3, col=1)
 
-
     spectrogram_figs.update_layout(
         width=600,
         margin=dict(l=40, r=40, t=40, b=40),
         showlegend=False,
     )
+
+    ## add title to the spectrogram
+    spectrogram_figs.update_yaxes(title_text="Freq X", row=1, col=1)
+    spectrogram_figs.update_yaxes(title_text="Freq Y", row=2, col=1)
+    spectrogram_figs.update_yaxes(title_text="Freq Z", row=3, col=1)
+
 
     return location_info, waveform_fig, spectrogram_figs, dominant_frequencies
 
