@@ -259,7 +259,7 @@ def update_visualization(client_ip, duration, power_threshold=-10):
     spectrogram_figs.update_yaxes(title_text="Freq Z", row=3, col=1)
 
 
-    return location_info, waveform_fig, spectrogram_figs, dominant_frequencies
+    return location_info, waveform_fig, spectrogram_figs, dominant_frequencies, hv_dominant_frequency
 
 
 def get_all_client_ip():
@@ -346,9 +346,11 @@ def main():
 
 
     # Create placeholders
-    colx, coly = st.columns(2)
+    colx, col_hv, coly = st.columns(3)
     with colx:
         location_placeholder = st.empty()
+    with col_hv:
+        hv_dominant_frequencies_placeholder = st.empty()
     with coly:
         dominant_frequencies_placeholder = st.empty()
 
@@ -364,7 +366,7 @@ def main():
             # Generate a unique key suffix using the current timestamp
             timestamp_key = int(time.time() * 1000)
 
-            location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration, dominant_frequency_threshold)
+            location_info, waveform_fig, spectrogram_figs, dominant_frequencies, hv_dominant_frequency = update_visualization(client_ip, duration, dominant_frequency_threshold)
 
             dominant_frequencies_str = (
                 f"**Dominant Frequencies (Hz):** X-comp: {format_dominant_frequency(dominant_frequencies['X'])} | "
@@ -374,6 +376,9 @@ def main():
 
             # Update location information
             location_placeholder.markdown(location_info)
+
+            # Update H/V dominant frequency
+            hv_dominant_frequencies_placeholder.markdown(f"**H/V Frequency (Hz):** {format_dominant_frequency(hv_dominant_frequency)}")
 
             # Update dominant frequencies
             dominant_frequencies_placeholder.markdown(dominant_frequencies_str)
