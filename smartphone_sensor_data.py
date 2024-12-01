@@ -244,8 +244,7 @@ def update_visualization(client_ip, duration, power_threshold=-10):
 
     hv_dominant_frequency = extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold)
 
-    print(f"hv_dominant_frequency: {hv_dominant_frequency}")
-
+    # print(f"hv_dominant_frequency: {hv_dominant_frequency}")
 
     spectrogram_figs.update_layout(
         width=600,
