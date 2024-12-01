@@ -258,10 +258,10 @@ def main():
     # Add auto-refresh option
     refresh_rate = st.sidebar.slider(
         "Refresh Rate (seconds)",
-        min_value=1.0,
+        min_value=0.5,
         max_value=60.0,
         value=1.0,
-        step=1.0
+        step=0.5
     )
 
     # Create placeholders
@@ -279,34 +279,34 @@ def main():
 
 
     try:
-        
-        # Generate a unique key suffix using the current timestamp
-        timestamp_key = int(time.time() * 1000)
+        while True:
+            # Generate a unique key suffix using the current timestamp
+            timestamp_key = int(time.time() * 1000)
 
-        location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
+            location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
-        dominant_frequencies_str = (
-            f"**Dominant Frequencies (Hz):** X-comp: {format_dominant_frequency(dominant_frequencies['X'])} | "
-            f"Y-comp: {format_dominant_frequency(dominant_frequencies['Y'])} | "
-            f"Z-comp: {format_dominant_frequency(dominant_frequencies['Z'])}"
-        )
+            dominant_frequencies_str = (
+                f"**Dominant Frequencies (Hz):** X-comp: {format_dominant_frequency(dominant_frequencies['X'])} | "
+                f"Y-comp: {format_dominant_frequency(dominant_frequencies['Y'])} | "
+                f"Z-comp: {format_dominant_frequency(dominant_frequencies['Z'])}"
+            )
 
-        # Update location information
-        location_placeholder.markdown(location_info)
+            # Update location information
+            location_placeholder.markdown(location_info)
 
-        # Update dominant frequencies
-        dominant_frequencies_placeholder.markdown(dominant_frequencies_str)
+            # Update dominant frequencies
+            dominant_frequencies_placeholder.markdown(dominant_frequencies_str)
 
-        # Use st.columns() dynamically for waveform and spectrogram
-        waveform_col, spectrogram_col = st.columns([1, 1])
+            # Use st.columns() dynamically for waveform and spectrogram
+            waveform_col, spectrogram_col = st.columns([1, 1])
 
-        with waveform_col:
-            waveform_placeholder.plotly_chart(waveform_fig, key=f"waveform_{client_ip}_{timestamp_key}")
+            with waveform_col:
+                waveform_placeholder.plotly_chart(waveform_fig, key=f"waveform_{client_ip}_{timestamp_key}")
 
-        with spectrogram_col:
-            spectrogram_placeholder.plotly_chart(spectrogram_figs, key=f"spectrogram_{client_ip}_{timestamp_key}")
+            with spectrogram_col:
+                spectrogram_placeholder.plotly_chart(spectrogram_figs, key=f"spectrogram_{client_ip}_{timestamp_key}")
 
-        time.sleep(refresh_rate)
+            time.sleep(refresh_rate)
 
     except Exception as e:
         logger.exception(f"Error: {e}")
