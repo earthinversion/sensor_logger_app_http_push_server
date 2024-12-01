@@ -92,9 +92,9 @@ def extract_dominant_frequency(Sxx, f):
     # Sum power over all time slices to get total power per frequency
     total_power = np.sum(Sxx, axis=1)
     total_power_db = 10 * np.log10(total_power)
-    print(total_power_db)
+    # print(total_power_db)
     # Define a power threshold
-    power_threshold = -40  # dB  
+    power_threshold = -50  # dB  
     # Find the index of the frequency with the maximum total power
     dominant_frequency_index = np.argmax(total_power_db)
     # Check if the maximum power is above the threshold
