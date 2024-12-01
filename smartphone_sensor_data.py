@@ -88,14 +88,20 @@ def get_last_samples(client_ip=None, duration=10):
         return pd.DataFrame()
 
 def extract_dominant_frequency(Sxx, f):
-    """Extract the single dominant frequency from the spectrogram."""
+    """Extract the single dominant frequency from the spectrogram if its power is above a threshold."""
     # Sum power over all time slices to get total power per frequency
     total_power = np.sum(Sxx, axis=1)
+    # Define a power threshold
+    power_threshold = -40  # dB  
     # Find the index of the frequency with the maximum total power
     dominant_frequency_index = np.argmax(total_power)
-    # Return the frequency corresponding to the maximum power
-    return f[dominant_frequency_index]
-
+    # Check if the maximum power is above the threshold
+    if total_power[dominant_frequency_index] > power_threshold:
+        # Return the frequency corresponding to the maximum power
+        return f[dominant_frequency_index]
+    else:
+        # Return None if no dominant frequency meets the threshold
+        return None
 
 
 def plot_spectrogram(data, component, fs=50):
@@ -219,7 +225,6 @@ def main():
     client_ip = client_ip_with_tag.split(" ")[0]
 
     # Display current tag and allow modification
-    st.sidebar.markdown("### Manage Tag for Selected Client")
     current_tag = tags.get(client_ip, "")
     new_tag = st.sidebar.text_input("Tag", value=current_tag)
 
@@ -269,9 +274,9 @@ def main():
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies = update_visualization(client_ip, duration)
 
             dominant_frequencies_str = (
-                f"**Dominant Frequencies (Hz):** X-axis: {dominant_frequencies['X']:.2f} Hz | "
-                f"Y-axis: {dominant_frequencies['Y']:.2f} Hz | "
-                f"Z-axis: {dominant_frequencies['Z']:.2f} Hz"
+                f"**Dominant Frequencies (Hz):** X-comp: {dominant_frequencies['X']:.2f} Hz | "
+                f"Y-comp: {dominant_frequencies['Y']:.2f} Hz | "
+                f"Z-comp: {dominant_frequencies['Z']:.2f} Hz"
             )
 
             # Update location information
