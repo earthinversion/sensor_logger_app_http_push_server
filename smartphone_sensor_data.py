@@ -125,9 +125,10 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
         Sxx_z, f_z = Sxx_f_dict['Z']
 
         # Convert power spectra to dB
-        Sxx_x_db = 10 * np.log10(np.sum(Sxx_x, axis=1))
-        Sxx_y_db = 10 * np.log10(np.sum(Sxx_y, axis=1))
-        Sxx_z_db = 10 * np.log10(np.sum(Sxx_z, axis=1))
+        epsilon = 1e-10
+        Sxx_x_db = 10 * np.log10(np.sum(Sxx_x, axis=1) + epsilon)
+        Sxx_y_db = 10 * np.log10(np.sum(Sxx_y, axis=1) + epsilon)
+        Sxx_z_db = 10 * np.log10(np.sum(Sxx_z, axis=1) + epsilon)
 
         # Calculate average horizontal spectrum in dB (X and Y components)
         Sxx_h_db = (Sxx_x_db + Sxx_y_db) / 2
