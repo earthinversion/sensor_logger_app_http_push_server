@@ -214,7 +214,8 @@ def format_dominant_frequency(dominant_frequency):
     return f"{dominant_frequency:.2f} Hz"
 
 def main():
-    st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
+    # st.title(f"{sensor_data_to_store.capitalize()} Data Visualization")
+    st.header(f"MyShake Experiment ({sensor_data_to_store.capitalize()})")
 
     # Initialize the SQLite database
     init_tag_db()
