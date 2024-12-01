@@ -181,7 +181,7 @@ def plot_spectrogram(data, component, fs=50, threshold=-30):
         xaxis_title="Time (s)",
         yaxis_title="Frequency (Hz)",
     )
-    return fig, dominant_frequency, Sxx_db, f
+    return fig, dominant_frequency, Sxx, f
 
 
 
