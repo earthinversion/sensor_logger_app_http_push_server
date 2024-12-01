@@ -348,7 +348,7 @@ def main():
         "Frequency Thresh (dB)",
         min_value=-70,
         max_value=0,
-        value=-40,
+        value=-30,
         step=5
     )
 
