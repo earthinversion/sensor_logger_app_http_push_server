@@ -196,7 +196,7 @@ def update_visualization(client_ip, duration, power_threshold=-10):
     # Fetch the location data
     location_data = get_location_data(client_ip)
     location_info = f"""
-    **Location Information:** ({location_data.get('latitude', 'N/A')}, {location_data.get('longitude', 'N/A')}, {location_data.get('altitude', 'N/A')} meters)
+    **Loc:** ({location_data.get('latitude', 'N/A')}, {location_data.get('longitude', 'N/A')}, {location_data.get('altitude', 'N/A')} meters)
     """ if location_data else "No location data available for this client."
 
     dominant_frequencies = {
@@ -377,7 +377,7 @@ def main():
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies, hv_dominant_frequency = update_visualization(client_ip, duration, dominant_frequency_threshold)
 
             dominant_frequencies_str = (
-                f"**Frequencies (Hz):** X: {format_dominant_frequency(dominant_frequencies['X'])} | "
+                f"**Freqs (Hz):** X: {format_dominant_frequency(dominant_frequencies['X'])} | "
                 f"Y: {format_dominant_frequency(dominant_frequencies['Y'])} | "
                 f"Z: {format_dominant_frequency(dominant_frequencies['Z'])}"
             )
