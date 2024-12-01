@@ -368,9 +368,9 @@ def main():
             location_info, waveform_fig, spectrogram_figs, dominant_frequencies, hv_dominant_frequency = update_visualization(client_ip, duration, dominant_frequency_threshold)
 
             dominant_frequencies_str = (
-                f"**Dominant Frequencies (Hz):** X-comp: {format_dominant_frequency(dominant_frequencies['X'])} | "
-                f"Y-comp: {format_dominant_frequency(dominant_frequencies['Y'])} | "
-                f"Z-comp: {format_dominant_frequency(dominant_frequencies['Z'])}"
+                f"**Frequencies (Hz):** X: {format_dominant_frequency(dominant_frequencies['X'])} | "
+                f"Y: {format_dominant_frequency(dominant_frequencies['Y'])} | "
+                f"Z: {format_dominant_frequency(dominant_frequencies['Z'])}"
             )
 
             # Update location information
