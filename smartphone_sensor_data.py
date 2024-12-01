@@ -135,6 +135,12 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
         Sxx_y_db = 10 * np.log10(np.sum(Sxx_y, axis=1))
         Sxx_z_db = 10 * np.log10(np.sum(Sxx_z, axis=1))
 
+
+        ## check for all three components for the threshold
+        for ss in [Sxx_x_db, Sxx_y_db, Sxx_z_db]:
+            if np.max(ss) < power_threshold:
+                return 0.0
+
         # Calculate average horizontal spectrum in dB (X and Y components)
         Sxx_h_db = (Sxx_x_db + Sxx_y_db) / 2
 
@@ -148,9 +154,9 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
 
         # Find the index of the frequency with the maximum H/V ratio above the power threshold
         valid_indices = np.where(hv_ratio_db > power_threshold)[0]
-        if len(valid_indices) == 0:
-            # print("No valid indices")
-            return 0.0  # Return 0 if no frequency meets the threshold
+        # if len(valid_indices) == 0:
+        #     # print("No valid indices")
+        #     return 0.0  # Return 0 if no frequency meets the threshold
 
         dominant_index = valid_indices[np.argmax(hv_ratio_db[valid_indices])]
         return f_x[dominant_index]  # Return the dominant frequency
