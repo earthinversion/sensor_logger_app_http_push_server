@@ -144,12 +144,12 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
 
         # Compute the H/V ratio in dB
         hv_ratio_db = Sxx_h_db - Sxx_z_db
-        print(f"Sxx_z_db: {Sxx_z_db}")
+        # print(f"Sxx_z_db: {Sxx_z_db}")
 
         # Find the index of the frequency with the maximum H/V ratio above the power threshold
         valid_indices = np.where(hv_ratio_db > power_threshold)[0]
         if len(valid_indices) == 0:
-            print("No valid indices")
+            # print("No valid indices")
             return 0.0  # Return 0 if no frequency meets the threshold
 
         dominant_index = valid_indices[np.argmax(hv_ratio_db[valid_indices])]
