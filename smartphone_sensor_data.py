@@ -94,7 +94,7 @@ def extract_dominant_frequency(Sxx, f):
     total_power_db = 10 * np.log10(total_power)
     # print(total_power_db)
     # Define a power threshold
-    power_threshold = -50  # dB  
+    power_threshold = -30  # dB  
     # Find the index of the frequency with the maximum total power
     dominant_frequency_index = np.argmax(total_power_db)
     # Check if the maximum power is above the threshold
