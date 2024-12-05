@@ -2,6 +2,7 @@ import pandas as pd
 import psycopg2
 import logging
 from sqlalchemy import create_engine
+from sqlalchemy.sql import text
 
 # Configure logging
 logging.basicConfig(
@@ -29,13 +30,15 @@ sensor_tables = ['accelerometer_data', 'gravity_data', 'gyroscope_data', 'totala
 # HDF5 File Path
 HDF5_FILE = 'sensor_data.h5'
 
+
 def get_unique_client_ips(engine):
     client_ips = set()
     try:
         with engine.connect() as conn:
             for table in sensor_tables:
                 try:
-                    query = f"SELECT DISTINCT client_ip FROM {table} WHERE client_ip IS NOT NULL"
+                    # Use sqlalchemy.text to handle raw SQL
+                    query = text(f"SELECT DISTINCT client_ip FROM {table} WHERE client_ip IS NOT NULL")
                     result = conn.execute(query)
                     ips = [row['client_ip'] for row in result]
                     client_ips.update(ips)
@@ -45,6 +48,7 @@ def get_unique_client_ips(engine):
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
     return list(client_ips)
+
 
 
 def extract_sensor_data(engine, client_ip):
