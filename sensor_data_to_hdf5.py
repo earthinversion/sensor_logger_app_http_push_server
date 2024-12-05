@@ -37,10 +37,11 @@ def get_unique_client_ips(engine):
         with engine.connect() as conn:
             for table in sensor_tables:
                 try:
-                    # Use sqlalchemy.text to handle raw SQL
                     query = text(f"SELECT DISTINCT client_ip FROM {table} WHERE client_ip IS NOT NULL")
                     result = conn.execute(query)
-                    ips = [row['client_ip'] for row in result]
+                    # Use mappings() to get dictionary-like access
+                    rows = result.mappings().all()
+                    ips = [r['client_ip'] for r in rows]
                     client_ips.update(ips)
                 except Exception as table_error:
                     logger.exception(f"Error querying {table}: {table_error}")
@@ -48,6 +49,7 @@ def get_unique_client_ips(engine):
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
     return list(client_ips)
+
 
 
 
