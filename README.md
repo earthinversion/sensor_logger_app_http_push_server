@@ -27,9 +27,17 @@ pip install plotly
 pip install streamlit
 pip install sqlalchemy
 pip install scipy # for plotting spectrogram
+pip install tables
+
 
 sudo yum groupinstall "Development Tools"
 sudo yum install -y postgresql-devel python3-devel
+
+sudo dnf groupinstall "Development Tools" -y
+
+
+
+
 
 pip install psycopg2 #to use postgresql instead of sqlite
 
