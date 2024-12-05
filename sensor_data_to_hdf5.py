@@ -24,25 +24,28 @@ DB_CONFIG = {
 }
 
 # List of sensor tables
-sensor_tables = ['gravity_data', 'accelerometer_data', 'gyroscope_data', 'totalacceleration_data']
+sensor_tables = ['accelerometer_data', 'gravity_data', 'gyroscope_data', 'totalacceleration_data']
 
 # HDF5 File Path
 HDF5_FILE = 'sensor_data.h5'
 
 def get_unique_client_ips(engine):
-    """Get the list of unique client_ip values from all sensor tables."""
     client_ips = set()
     try:
         with engine.connect() as conn:
             for table in sensor_tables:
-                query = f"SELECT DISTINCT client_ip FROM {table}"
-                result = conn.execute(query)
-                ips = [row['client_ip'] for row in result]
-                client_ips.update(ips)
+                try:
+                    query = f"SELECT DISTINCT client_ip FROM {table} WHERE client_ip IS NOT NULL"
+                    result = conn.execute(query)
+                    ips = [row['client_ip'] for row in result]
+                    client_ips.update(ips)
+                except Exception as table_error:
+                    logger.error(f"Error querying {table}: {table_error}")
         logger.info(f"Found {len(client_ips)} unique client_ip(s).")
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
     return list(client_ips)
+
 
 def extract_sensor_data(engine, client_ip):
     """Extract sensor data for a given client_ip from all sensor tables."""
