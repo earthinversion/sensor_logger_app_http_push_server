@@ -43,7 +43,7 @@ def get_unique_client_ips(engine):
                     ips = [row['client_ip'] for row in result]
                     client_ips.update(ips)
                 except Exception as table_error:
-                    logger.error(f"Error querying {table}: {table_error}")
+                    logger.exception(f"Error querying {table}: {table_error}")
         logger.info(f"Found {len(client_ips)} unique client_ip(s).")
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
