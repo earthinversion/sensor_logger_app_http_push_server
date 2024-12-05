@@ -25,7 +25,8 @@ DB_CONFIG = {
 }
 
 # List of sensor tables
-sensor_tables = ['accelerometer_data', 'gravity_data', 'gyroscope_data', 'totalacceleration_data']
+# sensor_tables = ['accelerometer_data', 'gravity_data', 'gyroscope_data', 'totalacceleration_data']
+sensor_tables = ['accelerometer_data']
 
 # HDF5 File Path
 HDF5_FILE = 'sensor_data.h5'
