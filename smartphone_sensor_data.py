@@ -196,7 +196,7 @@ def update_visualization(client_ip, duration, power_threshold=-10):
     # Fetch the location data
     location_data = get_location_data(client_ip)
     location_info = f"""
-    **Loc:** ({location_data.get('latitude', 'N/A')}, {location_data.get('longitude', 'N/A')}, {location_data.get('altitude', 'N/A')} meters)
+    {location_data.get('latitude', 'N/A'):.3f}, {location_data.get('longitude', 'N/A'):.3f}, {location_data.get('altitude', 'N/A')} m
     """ if location_data else "No location data available for this client."
 
     dominant_frequencies = {

@@ -4,3 +4,4 @@ sensor_log.pem
 dropping_database.md
 data_fetching.txt
 rsync_ec2_local.sh
+*.sqlite

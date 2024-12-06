@@ -73,7 +73,13 @@ streamlit run smartphone_sensor_data.py --server.port 5000
 
 
 ## Access the app
+- http://<ip-address>:5000/
 
+## Export the database
+```bash
+python sensor_data_to_sqlite.py
+
+```
 
 ## Extra
 ```bash
