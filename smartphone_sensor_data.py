@@ -307,6 +307,10 @@ def main():
         options=tagged_ips
     )
 
+    if client_ip_with_tag is None:
+        st.error("No client IPs found in the database.")
+        return
+
     # Extract the raw client_ip from the selection
     client_ip = client_ip_with_tag.split(" ")[0]
 

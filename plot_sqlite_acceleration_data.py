@@ -2,9 +2,13 @@ import sqlite3
 import pandas as pd
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
+from pytz import timezone, utc
+import os
 
 # SQLite Database Path
 SQLITE_FILE = 'sensor_data.sqlite'
+outfigdir = 'petrolia_eq_dec12052024'
+os.makedirs(outfigdir, exist_ok=True)
 
 def get_client_ips(sqlite_conn):
     """Retrieve the unique client_ip values from the accelerometer_data table."""
@@ -25,6 +29,18 @@ def get_accelerometer_data(sqlite_conn, client_ip, hours):
         ORDER BY timestamp
     """
     df = pd.read_sql_query(query, sqlite_conn, params=(client_ip, cutoff_time_str))
+    return df
+
+
+def get_accelerometer_data_by_range(sqlite_conn, client_ip, start_time, end_time):
+    """Retrieve accelerometer data for a specific client_ip within a given time range."""
+    query = f"""
+        SELECT timestamp, x, y, z
+        FROM accelerometer_data
+        WHERE client_ip = ? AND timestamp BETWEEN ? AND ?
+        ORDER BY timestamp
+    """
+    df = pd.read_sql_query(query, sqlite_conn, params=(client_ip, start_time, end_time))
     return df
 
 def plot_accelerometer_data(client_ip, data, fig_name):
@@ -62,6 +78,16 @@ def main():
     """Main function to read SQLite DB and plot accelerometer data."""
     # Number of hours to filter
     n_hours = 1
+
+    ## Enter start time (YYYY-MM-DD HH:MM:SS) and end time (YYYY-MM-DD HH:MM:SS)
+    # Define the UTC time range
+    start_time_utc = datetime.strptime('2024-12-05 18:44:00', '%Y-%m-%d %H:%M:%S')
+    end_time_utc = datetime.strptime('2024-12-05 18:50:00', '%Y-%m-%d %H:%M:%S')
+
+    # Convert UTC time to PT (Pacific Time)
+    pt_timezone = timezone('US/Pacific')
+    start_time = utc.localize(start_time_utc).astimezone(pt_timezone).strftime('%Y-%m-%d %H:%M:%S')
+    end_time = utc.localize(end_time_utc).astimezone(pt_timezone).strftime('%Y-%m-%d %H:%M:%S')
     
     # Connect to the SQLite database
     sqlite_conn = sqlite3.connect(SQLITE_FILE)
@@ -72,11 +98,12 @@ def main():
     
     # Plot accelerometer data for each client_ip
     for client_ip in client_ips:
-        print(f"Plotting data for client_ip: {client_ip}")
-        data = get_accelerometer_data(sqlite_conn, client_ip, n_hours)
+        # print(f"Plotting data for client_ip: {client_ip}")
+        # data = get_accelerometer_data(sqlite_conn, client_ip, n_hours)
+        data = get_accelerometer_data_by_range(sqlite_conn, client_ip, start_time, end_time)
         if not data.empty:
             client_ip_str = client_ip.replace('.', '_')
-            fig_name = f"accelerometer_data_{client_ip_str}.png"
+            fig_name = f"{outfigdir}/accelerometer_data_{client_ip_str}.png"
             plot_accelerometer_data(client_ip, data, fig_name)
         else:
             print(f"No accelerometer data found for client_ip: {client_ip} in the last {n_hours} hours.")
