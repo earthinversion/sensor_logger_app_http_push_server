@@ -181,7 +181,13 @@ async def upload_sensor_data(request: Request):
             logger.warning("Invalid payload format received")
             return {"status": "error", "message": "Invalid payload format"}
         
-        client_ip = request.client.host
+        # client_ip = request.client.host
+
+        client_host = request.client.host
+        client_port = request.client.port
+        client_ip = f"{client_host}:{client_port}"  # Combine host and port
+
+
         data_batches = {"gravity": [], "accelerometer": [], "accelerometeruncalibrated": [], "gyroscope": [], "totalacceleration": []}
         location_data = []
         processed_count = 0
