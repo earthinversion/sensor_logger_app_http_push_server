@@ -272,14 +272,41 @@ def update_visualization(client_ip, duration, power_threshold=-10):
     return location_info, waveform_fig, spectrogram_figs, dominant_frequencies, hv_dominant_frequency
 
 
+# def get_all_client_ip():
+#     """Fetch all unique client_ip values from the database."""
+#     try:
+#         query = f"""
+#             SELECT DISTINCT client_ip
+#             FROM {sensor_data_to_store}_data
+#         """
+#         df = pd.read_sql_query(query, engine)
+#         client_ips = df['client_ip'].tolist()
+
+#         # Load existing tags from SQLite
+#         tags = get_tags()
+
+#         # Combine client IPs with tags for display
+#         tagged_ips = [f"{ip} ({tags.get(ip, 'No Tag')})" for ip in client_ips]
+#         return tagged_ips, client_ips, tags
+    
+#     except Exception as e:
+#         logger.error(f"Error fetching client_ip values: {e}")
+#         return []
+
 def get_all_client_ip():
-    """Fetch all unique client_ip values from the database."""
+    """Fetch all unique client_ip values from the database with data in the last 5 minutes."""
     try:
+        # Get the current time and subtract 5 minutes to filter recent data
         query = f"""
             SELECT DISTINCT client_ip
             FROM {sensor_data_to_store}_data
+            WHERE timestamp >= NOW() - INTERVAL '5 minutes'
         """
         df = pd.read_sql_query(query, engine)
+        
+        if df.empty:
+            return [], [], {}  # Return empty lists if no data is found
+
         client_ips = df['client_ip'].tolist()
 
         # Load existing tags from SQLite
@@ -288,11 +315,10 @@ def get_all_client_ip():
         # Combine client IPs with tags for display
         tagged_ips = [f"{ip} ({tags.get(ip, 'No Tag')})" for ip in client_ips]
         return tagged_ips, client_ips, tags
-    
+
     except Exception as e:
         logger.error(f"Error fetching client_ip values: {e}")
         return []
-
 
 
 def format_dominant_frequency(dominant_frequency):
@@ -321,25 +347,6 @@ def main():
 
     # Extract the raw client_ip from the selection
     client_ip = client_ip_with_tag.split(" ")[0]
-
-
-    # Add a button to delete the selected client_ip
-    if st.sidebar.button("Remove Client IP"):
-        try:
-            tags.pop(client_ip, None)
-            st.sidebar.success(f"Successfully removed {client_ip} from the database.")
-            # Set a session state flag to indicate the list should refresh
-            st.session_state["client_ip_removed"] = True
-            return  # End this run to allow rerun with the updated list
-        except Exception as e:
-            st.error(f"Error removing {client_ip}: {e}")
-        
-
-    # Check if the session state flag is set and refresh the list
-    if "client_ip_removed" in st.session_state:
-        del st.session_state["client_ip_removed"]  # Clear the flag after refresh
-        # st.experimental_set_query_params()  # This triggers a refresh of the app
-        st.query_params()  # This triggers a refresh of the app
 
 
     # Display current tag and allow modification
