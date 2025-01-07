@@ -173,9 +173,10 @@ def plot_spectrogram(data, component, fs=50, threshold=-30, freq_range=(0.05, 4)
 
     # Filter frequencies within the desired range
     freq_min, freq_max = freq_range
+    print("freq: ",f)
     freq_mask = (f >= freq_min) & (f <= freq_max)
     f = f[freq_mask]
-    Sxx = Sxx[freq_mask, :]
+    # Sxx = Sxx[freq_mask, :]
 
     # Extract dominant frequencies
     dominant_frequency = extract_dominant_frequency(Sxx, f, power_threshold=threshold)
