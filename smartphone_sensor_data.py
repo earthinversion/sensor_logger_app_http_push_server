@@ -353,7 +353,8 @@ def main():
     # Check if the session state flag is set and refresh the list
     if "client_ip_removed" in st.session_state:
         del st.session_state["client_ip_removed"]  # Clear the flag after refresh
-        st.experimental_set_query_params()  # This triggers a refresh of the app
+        # st.experimental_set_query_params()  # This triggers a refresh of the app
+        st.query_params()  # This triggers a refresh of the app
 
 
     # Display current tag and allow modification
