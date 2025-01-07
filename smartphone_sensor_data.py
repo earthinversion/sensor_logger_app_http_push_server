@@ -171,7 +171,7 @@ def plot_spectrogram(data, component, fs=50, threshold=-30, freq_range=(0.05, 6)
     Sxx = gaussian_filter(Sxx_rough, sigma=1)
 
     # Filter frequencies within the desired range
-    use_freq_range = False
+    use_freq_range = True
     if use_freq_range:
         freq_min, freq_max = freq_range
         freq_mask = (f >= freq_min) & (f <= freq_max)
