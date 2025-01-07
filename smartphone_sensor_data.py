@@ -293,22 +293,7 @@ def get_all_client_ip():
         logger.error(f"Error fetching client_ip values: {e}")
         return []
 
-from sqlalchemy.sql import text
 
-def delete_client_ip(client_ip):
-    """Delete all records for the selected client_ip from the database."""
-    try:
-        # Delete data for the selected client_ip
-        with engine.connect() as connection:
-            # Use the `text` module to execute raw SQL queries
-            connection.execute(text(f"DELETE FROM {sensor_data_to_store}_data WHERE client_ip = :client_ip"), {'client_ip': client_ip})
-            connection.execute(text("DELETE FROM location_data WHERE client_ip = :client_ip"), {'client_ip': client_ip})
-        logger.info(f"Deleted client_ip {client_ip} from the database.")
-        return True
-    except Exception as e:
-        logger.error(f"Error deleting client_ip {client_ip}: {e}")
-        print(f"Error deleting client_ip {client_ip}: {e}")
-        return False
 
 def format_dominant_frequency(dominant_frequency):
     """Format the dominant frequency string."""
@@ -340,15 +325,15 @@ def main():
 
     # Add a button to delete the selected client_ip
     if st.sidebar.button("Remove Client IP"):
-        success = delete_client_ip(client_ip)
-        if success:
+        try:
+            tags.pop(client_ip, None)
             st.sidebar.success(f"Successfully removed {client_ip} from the database.")
             # Set a session state flag to indicate the list should refresh
             st.session_state["client_ip_removed"] = True
             return  # End this run to allow rerun with the updated list
-        else:
-            st.sidebar.error(f"Failed to remove {client_ip}. Check the logs for details.")
-            return
+        except Exception as e:
+            st.error(f"Error removing {client_ip}: {e}")
+        
 
     # Check if the session state flag is set and refresh the list
     if "client_ip_removed" in st.session_state:
