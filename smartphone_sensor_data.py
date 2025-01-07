@@ -293,18 +293,21 @@ def get_all_client_ip():
         logger.error(f"Error fetching client_ip values: {e}")
         return []
 
+from sqlalchemy.sql import text
+
 def delete_client_ip(client_ip):
     """Delete all records for the selected client_ip from the database."""
     try:
         # Delete data for the selected client_ip
         with engine.connect() as connection:
-            connection.execute(f"DELETE FROM {sensor_data_to_store}_data WHERE client_ip = '{client_ip}'")
-            connection.execute(f"DELETE FROM location_data WHERE client_ip = '{client_ip}'")
+            # Use the `text` module to execute raw SQL queries
+            connection.execute(text(f"DELETE FROM {sensor_data_to_store}_data WHERE client_ip = :client_ip"), {'client_ip': client_ip})
+            connection.execute(text("DELETE FROM location_data WHERE client_ip = :client_ip"), {'client_ip': client_ip})
         logger.info(f"Deleted client_ip {client_ip} from the database.")
         return True
     except Exception as e:
+        logger.error(f"Error deleting client_ip {client_ip}: {e}")
         print(f"Error deleting client_ip {client_ip}: {e}")
-        # logger.error(f"Error deleting client_ip {client_ip}: {e}")
         return False
 
 def format_dominant_frequency(dominant_frequency):
