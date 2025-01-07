@@ -5,6 +5,8 @@ import asyncio
 import asyncpg
 import logging
 import uvicorn
+import argparse
+
 
 # Configure logging
 logging.basicConfig(
@@ -28,6 +30,15 @@ DB_CONFIG = {
 
 # sensor_data_list_to_store = ['gravity', 'accelerometer', 'barometer', 'magnetometer', 'compass', 'totalacceleration', 'battery', 'location']
 sensor_data_list_to_store = ['gravity', 'accelerometer','accelerometeruncalibrated', 'gyroscope', 'totalacceleration']
+
+
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Run the sensor data server.")
+parser.add_argument("--use-port", action="store_true", help="Include the client port in the IP address.")
+args = parser.parse_args()
+
+# Global variable for whether to use the port
+use_port = args.use_port
 
 app = FastAPI()
 
@@ -184,8 +195,12 @@ async def upload_sensor_data(request: Request):
         # client_ip = request.client.host
 
         client_host = request.client.host
-        client_port = request.client.port
-        client_ip = f"{client_host}:{client_port}"  # Combine host and port
+
+        if use_port:
+            client_port = request.client.port
+            client_ip = f"{client_host}:{client_port}"  # Combine host and port
+        else:
+            client_ip = client_host
 
 
         data_batches = {"gravity": [], "accelerometer": [], "accelerometeruncalibrated": [], "gyroscope": [], "totalacceleration": []}
