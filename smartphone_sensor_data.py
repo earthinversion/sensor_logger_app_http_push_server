@@ -303,7 +303,8 @@ def delete_client_ip(client_ip):
         logger.info(f"Deleted client_ip {client_ip} from the database.")
         return True
     except Exception as e:
-        logger.error(f"Error deleting client_ip {client_ip}: {e}")
+        print(f"Error deleting client_ip {client_ip}: {e}")
+        # logger.error(f"Error deleting client_ip {client_ip}: {e}")
         return False
 
 def format_dominant_frequency(dominant_frequency):
