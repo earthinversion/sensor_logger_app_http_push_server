@@ -34,7 +34,7 @@ sensor_data_list_to_store = ['gravity', 'accelerometer','accelerometeruncalibrat
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Run the sensor data server.")
-parser.add_argument("--use-port", action="store_true", help="Include the client port in the IP address.")
+parser.add_argument("--use-port", action="store_true", default=False, help="Include the client port in the IP address.")
 args = parser.parse_args()
 
 # Global variable for whether to use the port
