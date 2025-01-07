@@ -1,6 +1,7 @@
 import pandas as pd
 import logging
 from sqlalchemy import create_engine, text
+from datetime import datetime
 
 # Configure logging
 logging.basicConfig(
@@ -23,10 +24,11 @@ PG_DB_CONFIG = {
 }
 
 # SQLite Database Path
-SQLITE_FILE = 'sensor_data.sqlite'
+current_date_time = datetime.now().strftime('%Y%m%d%H%M%S')
+SQLITE_FILE = f'sensor_data_{current_date_time}.sqlite'
 
 # List of sensor tables
-sensor_tables = ['accelerometer_data']  # Add other tables as needed
+sensor_tables = ['accelerometer_data']  
 
 
 def get_unique_client_ips(pg_engine):
