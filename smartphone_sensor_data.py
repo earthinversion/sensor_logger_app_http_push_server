@@ -165,7 +165,7 @@ def extract_h_over_v_dominant_frequency(Sxx_f_dict, power_threshold=-30):
         return 0.0
 
 
-def plot_spectrogram(data, component, fs=50, threshold=-30, freq_range=(0.05, 4)):
+def plot_spectrogram(data, component, fs=50, threshold=-30, freq_range=(0.05, 6)):
     """Generate a spectrogram plot for a single component."""
     f, t, Sxx_rough = spectrogram(data, fs=fs, nperseg=256, noverlap=128, scaling='density')
     Sxx = gaussian_filter(Sxx_rough, sigma=1)
