@@ -293,6 +293,19 @@ def get_all_client_ip():
         logger.error(f"Error fetching client_ip values: {e}")
         return []
 
+def delete_client_ip(client_ip):
+    """Delete all records for the selected client_ip from the database."""
+    try:
+        # Delete data for the selected client_ip
+        with engine.connect() as connection:
+            connection.execute(f"DELETE FROM {sensor_data_to_store}_data WHERE client_ip = '{client_ip}'")
+            connection.execute(f"DELETE FROM location_data WHERE client_ip = '{client_ip}'")
+        logger.info(f"Deleted client_ip {client_ip} from the database.")
+        return True
+    except Exception as e:
+        logger.error(f"Error deleting client_ip {client_ip}: {e}")
+        return False
+
 def format_dominant_frequency(dominant_frequency):
     """Format the dominant frequency string."""
     if dominant_frequency == 0.0:
@@ -320,6 +333,16 @@ def main():
     # Extract the raw client_ip from the selection
     client_ip = client_ip_with_tag.split(" ")[0]
 
+
+    # Add a button to delete the selected client_ip
+    if st.sidebar.button("Remove Client IP"):
+        success = delete_client_ip(client_ip)
+        if success:
+            st.sidebar.success(f"Successfully removed {client_ip} from the database.")
+            st.experimental_rerun()  # Rerun the app to refresh the client IP list
+        else:
+            st.sidebar.error(f"Failed to remove {client_ip}. Check the logs for details.")
+            return
 
     # Display current tag and allow modification
     current_tag = tags.get(client_ip, "")
