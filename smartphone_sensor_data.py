@@ -343,10 +343,18 @@ def main():
         success = delete_client_ip(client_ip)
         if success:
             st.sidebar.success(f"Successfully removed {client_ip} from the database.")
-            st.experimental_rerun()  # Rerun the app to refresh the client IP list
+            # Set a session state flag to indicate the list should refresh
+            st.session_state["client_ip_removed"] = True
+            return  # End this run to allow rerun with the updated list
         else:
             st.sidebar.error(f"Failed to remove {client_ip}. Check the logs for details.")
             return
+
+    # Check if the session state flag is set and refresh the list
+    if "client_ip_removed" in st.session_state:
+        del st.session_state["client_ip_removed"]  # Clear the flag after refresh
+        st.experimental_set_query_params()  # This triggers a refresh of the app
+
 
     # Display current tag and allow modification
     current_tag = tags.get(client_ip, "")
