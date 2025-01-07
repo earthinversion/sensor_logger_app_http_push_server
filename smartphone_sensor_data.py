@@ -300,7 +300,7 @@ def get_all_client_ip():
         query = f"""
             SELECT DISTINCT client_ip
             FROM {sensor_data_to_store}_data
-            WHERE timestamp >= NOW() - INTERVAL '60 seconds'
+            WHERE timestamp >= NOW() - INTERVAL '10 seconds'
         """
         df = pd.read_sql_query(query, engine)
         
