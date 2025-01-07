@@ -294,13 +294,13 @@ def update_visualization(client_ip, duration, power_threshold=-10):
 #         return []
 
 def get_all_client_ip():
-    """Fetch all unique client_ip values from the database with data in the last 5 minutes."""
+    """Fetch all unique client_ip values from the database with data in the last nn seconds."""
     try:
-        # Get the current time and subtract 5 minutes to filter recent data
+        # Get the current time and subtract nn seconds to filter recent data
         query = f"""
             SELECT DISTINCT client_ip
             FROM {sensor_data_to_store}_data
-            WHERE timestamp >= NOW() - INTERVAL '5 minutes'
+            WHERE timestamp >= NOW() - INTERVAL '60 seconds'
         """
         df = pd.read_sql_query(query, engine)
         
@@ -442,6 +442,7 @@ def main():
 
     except Exception as e:
         logger.exception(f"Error: {e}")
+        # print(e)
         st.error("Something went wrong! Please check the logs for more information.")
 
 
