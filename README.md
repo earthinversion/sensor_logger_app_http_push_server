@@ -1,92 +1,85 @@
-## Sensor logger App Realtime Visualization
+# Smartphone Sensor Logger and Realtime Seismic Dashboard
 
-```bash
-sudo yum install git
-sudo yum install -y tmux
+I built this repository to capture smartphone motion streams in realtime, store them in a database, and visualize waveform and spectrogram behavior for rapid shake-event inspection.
 
-## installing docker
-sudo yum update -y
-sudo yum install -y docker
-sudo systemctl start docker
-sudo systemctl enable docker
-sudo usermod -aG docker ec2-user
+## What I Built
+- A FastAPI ingestion server for high-frequency smartphone sensor payloads
+- A Streamlit dashboard for realtime multi-axis waveform and spectrogram monitoring
+- PostgreSQL and SQLite workflows for production and lightweight local runs
+- Export utilities for SQLite and HDF5 archival pipelines
+- Analysis scripts and saved case-study figures
 
-sudo systemctl status docker.service
-
-
-sudo curl -L "https://github.com/docker/compose/releases/download/$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-sudo chmod +x /usr/local/bin/docker-compose
-
-
-## python env
-python3 -m venv venv
-source venv/bin/activate
-pip install fastapi uvicorn
-pip install plotly
-pip install streamlit
-pip install sqlalchemy
-pip install scipy # for plotting spectrogram
-pip install tables
-
-
-sudo yum groupinstall "Development Tools"
-sudo yum install -y postgresql-devel python3-devel
-
-sudo dnf groupinstall "Development Tools" -y
-
-
-
-
-
-pip install psycopg2 #to use postgresql instead of sqlite
-
-git clone https://github.com/earthinversion/sensor_logger_app_http_push_server.git
-
-
-
-# streamlit run streamlit_app.py --server.port 5000
-
-python datacollection_postgresql.py #to collect smartphone data to postgresql server asynchronously
-streamlit run smartphone_sensor_data.py --server.port 5000
+## Architecture
+```mermaid
+flowchart LR
+    A["Phone Sensor Logger"] --> B["FastAPI Ingestion Server"]
+    B --> C["PostgreSQL or SQLite"]
+    C --> D["Streamlit Dashboard"]
+    C --> E["Export Tools (SQLite / HDF5)"]
+    E --> F["Offline Analysis and Figures"]
 ```
 
-
-## Update Security Group
-1. Log in to the AWS Console and go to the EC2 Dashboard.
-1. Select Security Groups:
-    - In the left sidebar under Network & Security, click on Security Groups.
-1. Find the Security Group:
-    - Locate the Security Group associated with your EC2 instance. If you're unsure, go to the Instances section, select your instance, and check the Security Group listed in its details.
-1. Edit Inbound Rules:
-    - Click on the Security Group to open its details.
-    - Select the Inbound rules tab, then click Edit inbound rules.
-1. Add a New Rule for TCP Port 56204:
-    - Click Add rule and configure it as follows:
-    ```bash
-    Type: Custom TCP
-    Protocol: TCP
-    Port Range: 56204
-    Source: 0.0.0.0/0 (for all IP addresses) or specify a range that includes your phone’s IP address if you want to restrict access.
-    ```
-1. Save the rule.
-
-
-## Access the app
-- http://<ip-address>:5000/
-
-## Export the database
+## Quick Start (PostgreSQL Stack)
 ```bash
-python sensor_data_to_sqlite.py
-
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+docker compose up -d postgres
+python apps/postgresql/datacollection_server.py
 ```
 
-## Extra
+In another terminal:
 ```bash
-## install redis from source
-sudo yum install -y gcc jemalloc-devel
-curl -O http://download.redis.io/redis-stable.tar.gz
-tar xzvf redis-stable.tar.gz
-cd redis-stable
-make
-sudo make install
+source .venv/bin/activate
+streamlit run apps/postgresql/dashboard_streamlit.py --server.port 5000
 ```
+
+## SQLite Stack
+```bash
+python apps/sqlite/datacollection_server.py
+streamlit run apps/sqlite/dashboard_streamlit.py --server.port 5000
+```
+
+## Export Pipelines
+```bash
+python tools/export/export_postgres_to_sqlite.py
+python tools/export/export_postgres_to_hdf5.py
+```
+
+## Helper Commands
+```bash
+make install
+make postgres-up
+make postgres-ingest
+make postgres-dashboard
+make export-sqlite
+```
+
+## Repository Layout
+```text
+apps/
+  postgresql/      # I keep the PostgreSQL ingestion + dashboard apps here
+  sqlite/          # I keep the SQLite ingestion + dashboard apps here
+  experimental/    # I keep early-stage prototypes here
+tools/
+  export/          # I keep data export utilities here
+  analysis/        # I keep standalone analysis scripts here
+scripts/
+  run/             # I keep operational launch scripts here
+  setup/           # I keep EC2/bootstrap scripts here
+assets/
+  images/          # I keep dashboard and waveform snapshots here
+  case-studies/    # I keep event-specific generated outputs here
+docs/
+  PROJECT_STRUCTURE.md
+  OPERATIONS.md
+```
+
+## Demo Assets
+- `assets/images/accelerometer_data_136_152_214_153.png`
+- `assets/images/accelerometer_data_136_152_214_209.png`
+- `assets/case-studies/petrolia_eq_dec12052024/`
+
+## Preview
+![Waveform Snapshot](assets/images/accelerometer_data_136_152_214_153.png)
+![Waveform Snapshot](assets/images/accelerometer_data_136_152_214_209.png)

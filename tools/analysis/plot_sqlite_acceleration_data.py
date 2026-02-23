@@ -4,10 +4,11 @@ import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
 from pytz import timezone, utc
 import os
+from pathlib import Path
 
-# SQLite Database Path
-SQLITE_FILE = 'sensor_data.sqlite'
-outfigdir = 'petrolia_eq_dec12052024'
+ROOT_DIR = Path(__file__).resolve().parents[2]
+SQLITE_FILE = ROOT_DIR / "sensor_data.sqlite"
+outfigdir = ROOT_DIR / "assets" / "case-studies" / "petrolia_eq_dec12052024"
 os.makedirs(outfigdir, exist_ok=True)
 
 def get_client_ips(sqlite_conn):
@@ -90,7 +91,7 @@ def main():
     end_time = utc.localize(end_time_utc).astimezone(pt_timezone).strftime('%Y-%m-%d %H:%M:%S')
     
     # Connect to the SQLite database
-    sqlite_conn = sqlite3.connect(SQLITE_FILE)
+    sqlite_conn = sqlite3.connect(str(SQLITE_FILE))
     
     # Get unique client_ip values
     client_ips = get_client_ips(sqlite_conn)
@@ -103,7 +104,7 @@ def main():
         data = get_accelerometer_data_by_range(sqlite_conn, client_ip, start_time, end_time)
         if not data.empty:
             client_ip_str = client_ip.replace('.', '_')
-            fig_name = f"{outfigdir}/accelerometer_data_{client_ip_str}.png"
+            fig_name = outfigdir / f"accelerometer_data_{client_ip_str}.png"
             plot_accelerometer_data(client_ip, data, fig_name)
         else:
             print(f"No accelerometer data found for client_ip: {client_ip} in the last {n_hours} hours.")

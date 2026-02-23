@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+streamlit
+pandas
+plotly
+sqlalchemy
+asyncpg
+psycopg2-binary
+numpy
+scipy
+tables
+matplotlib
+pytz
